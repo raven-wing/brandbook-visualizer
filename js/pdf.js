@@ -545,30 +545,22 @@ const PdfModule = (function() {
                 tempContainer.appendChild(clone);
                 prepareCloneForCapture(clone, brandbook);
 
-                // Reduced delay
-                await new Promise(r => setTimeout(r, 50));
+                // Minimal delay for DOM settling
+                await new Promise(r => setTimeout(r, 20));
 
-                // Use JPEG for business card (large image), PNG for others
-                const useJpeg = config.id === 'mockup-business-card';
+                // Use JPEG for ALL mockups - significantly reduces data size
+                // which speeds up pdf.addImage() (the main bottleneck)
+                tempContainer.style.background = '#0f0f1a';
                 let imgData;
 
                 // Time the actual htmlToImage conversion
                 const htmlToImageStart = performance.now();
-                if (useJpeg) {
-                    // Set dark background for JPEG (no transparency support)
-                    tempContainer.style.background = '#0f0f1a';
-                    imgData = await htmlToImage.toJpeg(tempContainer, {
-                        pixelRatio: 1.0,  // Already 8x scale, no need for extra
-                        quality: 0.85,
-                        backgroundColor: '#0f0f1a',
-                        cacheBust: true
-                    });
-                } else {
-                    imgData = await htmlToImage.toPng(tempContainer, {
-                        pixelRatio: 1.5,
-                        cacheBust: true
-                    });
-                }
+                imgData = await htmlToImage.toJpeg(tempContainer, {
+                    pixelRatio: 1.0,  // Lower ratio = smaller image = faster pdf.addImage
+                    quality: 0.85,
+                    backgroundColor: '#0f0f1a',
+                    cacheBust: true
+                });
                 const htmlToImageDuration = performance.now() - htmlToImageStart;
                 console.log(`[PDF Timing] htmlToImage ${config.id}: ${htmlToImageDuration.toFixed(0)}ms`);
 
@@ -585,7 +577,7 @@ const PdfModule = (function() {
                     imgData,
                     width: img.width,
                     height: img.height,
-                    format: useJpeg ? 'JPEG' : 'PNG'
+                    format: 'JPEG'
                 });
 
             } catch (e) {
@@ -696,23 +688,23 @@ const PdfModule = (function() {
             `);
         }
 
-        // Business card front - solid secondary color background, 8x bigger (2880x1680)
+        // Business card front - optimized size (1920x1120)
         const cardFront = clone.querySelector('.business-card-front');
         if (cardFront) {
             setStyle(cardFront, `
                 background-color: ${secondaryColor} !important;
                 background-image: none !important;
                 color: #ffffff !important;
-                border-bottom: 32px solid ${primaryColor} !important;
-                border-radius: 96px !important;
-                padding: 192px !important;
-                width: 2880px !important;
-                height: 1680px !important;
+                border-bottom: 21px solid ${primaryColor} !important;
+                border-radius: 64px !important;
+                padding: 128px !important;
+                width: 1920px !important;
+                height: 1120px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: center !important;
                 align-items: center !important;
-                box-shadow: 0 64px 256px rgba(0,0,0,0.4) !important;
+                box-shadow: 0 43px 171px rgba(0,0,0,0.4) !important;
                 opacity: 1 !important;
                 flex-shrink: 0 !important;
             `);
@@ -721,31 +713,31 @@ const PdfModule = (function() {
             if (cardLogo) {
                 const logoUrl = BrandbookModule.getLogoUrl();
                 const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
-                setStyle(cardLogo, `width: 512px !important; height: 512px !important; margin-bottom: 8rem !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; background-image: ${bgImage} !important; display: block !important;`);
+                setStyle(cardLogo, `width: 341px !important; height: 341px !important; margin-bottom: 5rem !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; background-image: ${bgImage} !important; display: block !important;`);
             }
 
             const cardBrandName = cardFront.querySelector('.card-brand-name');
-            if (cardBrandName) setStyle(cardBrandName, `font-size: 11rem !important; font-weight: 700 !important; margin-bottom: 3rem !important;`);
+            if (cardBrandName) setStyle(cardBrandName, `font-size: 7rem !important; font-weight: 700 !important; margin-bottom: 2rem !important;`);
 
             const cardTagline = cardFront.querySelector('.card-tagline');
-            if (cardTagline) setStyle(cardTagline, `font-size: 6rem !important; opacity: 0.8 !important;`);
+            if (cardTagline) setStyle(cardTagline, `font-size: 4rem !important; opacity: 0.8 !important;`);
         }
 
-        // Business card back - 8x bigger (2880x1680)
+        // Business card back - optimized size (1920x1120)
         const cardBack = clone.querySelector('.business-card-back');
         if (cardBack) {
             setStyle(cardBack, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-left: 32px solid ${primaryColor} !important;
-                border-radius: 96px !important;
-                padding: 192px !important;
-                width: 2880px !important;
-                height: 1680px !important;
+                border-left: 21px solid ${primaryColor} !important;
+                border-radius: 64px !important;
+                padding: 128px !important;
+                width: 1920px !important;
+                height: 1120px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: center !important;
-                box-shadow: 0 64px 256px rgba(0,0,0,0.4) !important;
+                box-shadow: 0 43px 171px rgba(0,0,0,0.4) !important;
                 opacity: 1 !important;
                 flex-shrink: 0 !important;
                 filter: none !important;
@@ -756,16 +748,16 @@ const PdfModule = (function() {
             if (cardContact) setStyle(cardContact, `display: flex !important; flex-direction: column !important; width: 100% !important;`);
 
             const contactName = cardBack.querySelector('.contact-name');
-            if (contactName) setStyle(contactName, `color: ${primaryColor} !important; font-weight: bold !important; font-size: 9rem !important; margin-bottom: 2rem !important; display: block !important;`);
+            if (contactName) setStyle(contactName, `color: ${primaryColor} !important; font-weight: bold !important; font-size: 6rem !important; margin-bottom: 1.3rem !important; display: block !important;`);
 
             const contactTitle = cardBack.querySelector('.contact-title');
-            if (contactTitle) setStyle(contactTitle, `font-size: 6rem !important; opacity: 0.6 !important; margin-bottom: 10rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; display: block !important; color: #333 !important;`);
+            if (contactTitle) setStyle(contactTitle, `font-size: 4rem !important; opacity: 0.6 !important; margin-bottom: 6.7rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; display: block !important; color: #333 !important;`);
 
             const contactInfo = cardBack.querySelector('.contact-info');
             if (contactInfo) {
-                setStyle(contactInfo, `font-size: 6.5rem !important; gap: 3rem !important; display: flex !important; flex-direction: column !important; color: #333 !important;`);
+                setStyle(contactInfo, `font-size: 4.3rem !important; gap: 2rem !important; display: flex !important; flex-direction: column !important; color: #333 !important;`);
                 contactInfo.querySelectorAll('span').forEach(span => {
-                    setStyle(span, `display: block !important; font-size: 6.5rem !important; color: #333 !important;`);
+                    setStyle(span, `display: block !important; font-size: 4.3rem !important; color: #333 !important;`);
                 });
             }
         }
@@ -882,22 +874,22 @@ const PdfModule = (function() {
         const platformHandle = clone.querySelector('.platform-handle');
         if (platformHandle) setStyle(platformHandle, `font-size: 72px !important; color: #6b7280 !important;`);
 
-        // Letterhead - portrait orientation like real letter paper (5000x6875) - 2.5x bigger
+        // Letterhead - optimized size (3000x4125)
         const letterhead = clone.querySelector('.letterhead');
         if (letterhead) setStyle(letterhead, `
             background: #ffffff !important;
             background-color: #ffffff !important;
             opacity: 1 !important;
-            box-shadow: 0 60px 300px rgba(0,0,0,0.3) !important;
-            border-radius: 60px !important;
+            box-shadow: 0 36px 180px rgba(0,0,0,0.3) !important;
+            border-radius: 36px !important;
             filter: none !important;
             backdrop-filter: none !important;
-            width: 5000px !important;
-            min-width: 5000px !important;
-            max-width: 5000px !important;
-            height: 6875px !important;
-            min-height: 6875px !important;
-            padding: 250px !important;
+            width: 3000px !important;
+            min-width: 3000px !important;
+            max-width: 3000px !important;
+            height: 4125px !important;
+            min-height: 4125px !important;
+            padding: 150px !important;
             display: flex !important;
             flex-direction: column !important;
             margin: 0 auto !important;
@@ -907,13 +899,13 @@ const PdfModule = (function() {
 
         const letterheadHeader = clone.querySelector('.letterhead-header');
         if (letterheadHeader) setStyle(letterheadHeader, `
-            border-bottom: 15px solid ${primaryColor} !important;
+            border-bottom: 9px solid ${primaryColor} !important;
             color: ${primaryColor} !important;
             display: flex !important;
             align-items: center !important;
-            gap: 5rem !important;
-            padding-bottom: 5rem !important;
-            margin-bottom: 7.5rem !important;
+            gap: 3rem !important;
+            padding-bottom: 3rem !important;
+            margin-bottom: 4.5rem !important;
             width: 100% !important;
             flex-shrink: 0 !important;
         `);
@@ -922,67 +914,67 @@ const PdfModule = (function() {
         if (letterheadLogo) {
             const logoUrl = BrandbookModule.getLogoUrl();
             const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
-            setStyle(letterheadLogo, `width: 310px !important; height: 310px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; flex-shrink: 0 !important; background-image: ${bgImage} !important;`);
+            setStyle(letterheadLogo, `width: 186px !important; height: 186px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; flex-shrink: 0 !important; background-image: ${bgImage} !important;`);
         }
 
         const letterheadBrand = clone.querySelector('.letterhead-brand');
-        if (letterheadBrand) setStyle(letterheadBrand, `font-size: 9.4rem !important; font-weight: 700 !important;`);
+        if (letterheadBrand) setStyle(letterheadBrand, `font-size: 5.6rem !important; font-weight: 700 !important;`);
 
         const letterheadContent = clone.querySelector('.letterhead-content');
-        if (letterheadContent) setStyle(letterheadContent, `flex: 1 !important; font-size: 5.5rem !important; line-height: 1.8 !important; width: 100% !important;`);
+        if (letterheadContent) setStyle(letterheadContent, `flex: 1 !important; font-size: 3.3rem !important; line-height: 1.8 !important; width: 100% !important;`);
 
         const letterDate = clone.querySelector('.letter-date');
-        if (letterDate) setStyle(letterDate, `margin-bottom: 6.25rem !important; opacity: 0.6 !important; font-size: 4.75rem !important;`);
+        if (letterDate) setStyle(letterDate, `margin-bottom: 3.75rem !important; opacity: 0.6 !important; font-size: 2.85rem !important;`);
 
         const letterGreeting = clone.querySelector('.letter-greeting');
-        if (letterGreeting) setStyle(letterGreeting, `margin-bottom: 5rem !important; font-weight: 500 !important; font-size: 5.5rem !important;`);
+        if (letterGreeting) setStyle(letterGreeting, `margin-bottom: 3rem !important; font-weight: 500 !important; font-size: 3.3rem !important;`);
 
         const letterBody = clone.querySelector('.letter-body');
         if (letterBody) {
-            setStyle(letterBody, `font-size: 5.5rem !important; width: 100% !important;`);
-            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `margin-bottom: 5rem !important; opacity: 0.8 !important;`));
+            setStyle(letterBody, `font-size: 3.3rem !important; width: 100% !important;`);
+            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `margin-bottom: 3rem !important; opacity: 0.8 !important;`));
         }
 
         const letterSignature = clone.querySelector('.letter-signature');
-        if (letterSignature) setStyle(letterSignature, `margin-top: 10rem !important; font-size: 5.5rem !important;`);
+        if (letterSignature) setStyle(letterSignature, `margin-top: 6rem !important; font-size: 3.3rem !important;`);
 
         const signatureName = clone.querySelector('.signature-name');
-        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 5rem !important; font-size: 5.5rem !important;`);
+        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 3rem !important; font-size: 3.3rem !important;`);
 
         const signatureTitle = clone.querySelector('.signature-title');
-        if (signatureTitle) setStyle(signatureTitle, `font-size: 4.75rem !important; opacity: 0.6 !important;`);
+        if (signatureTitle) setStyle(signatureTitle, `font-size: 2.85rem !important; opacity: 0.6 !important;`);
 
         const letterheadFooter = clone.querySelector('.letterhead-footer');
         if (letterheadFooter) setStyle(letterheadFooter, `
-            border-top: 7.5px solid ${secondaryColor} !important;
+            border-top: 4.5px solid ${secondaryColor} !important;
             color: ${secondaryColor} !important;
             display: flex !important;
             justify-content: space-between !important;
-            gap: 6.25rem !important;
-            padding-top: 6.25rem !important;
-            font-size: 4.75rem !important;
+            gap: 3.75rem !important;
+            padding-top: 3.75rem !important;
+            font-size: 2.85rem !important;
             opacity: 0.5 !important;
             width: 100% !important;
             flex-shrink: 0 !important;
             margin-top: auto !important;
         `);
 
-        // Envelope - 8x bigger (4160px x 2080px) - using absolute positioning
+        // Envelope - optimized size (2500x1250)
         const envelope = clone.querySelector('.envelope');
         if (envelope) {
             setStyle(envelope, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-top: 24px solid ${primaryColor} !important;
-                border-radius: 96px !important;
+                border-top: 14px solid ${primaryColor} !important;
+                border-radius: 58px !important;
                 padding: 0 !important;
-                box-shadow: 0 32px 160px rgba(0,0,0,0.3) !important;
+                box-shadow: 0 19px 96px rgba(0,0,0,0.3) !important;
                 opacity: 1 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
-                width: 4160px !important;
-                min-width: 4160px !important;
-                height: 2080px !important;
+                width: 2500px !important;
+                min-width: 2500px !important;
+                height: 1250px !important;
                 margin: 0 auto !important;
                 color: #1a1a2e !important;
                 display: block !important;
@@ -997,10 +989,10 @@ const PdfModule = (function() {
             setStyle(envelopeSender, `
                 display: block !important;
                 position: absolute !important;
-                left: 200px !important;
-                top: 200px !important;
+                left: 120px !important;
+                top: 120px !important;
                 text-align: left !important;
-                width: 1200px !important;
+                width: 720px !important;
             `);
         }
 
@@ -1009,12 +1001,12 @@ const PdfModule = (function() {
             const logoUrl = BrandbookModule.getLogoUrl();
             const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
             setStyle(envelopeLogo, `
-                width: 256px !important;
-                height: 256px !important;
+                width: 154px !important;
+                height: 154px !important;
                 background-size: contain !important;
                 background-repeat: no-repeat !important;
                 background-position: center !important;
-                margin-bottom: 48px !important;
+                margin-bottom: 29px !important;
                 display: block !important;
                 background-image: ${bgImage} !important;
             `);
@@ -1025,8 +1017,8 @@ const PdfModule = (function() {
             setStyle(envelopeBrand, `
                 color: ${primaryColor} !important;
                 font-weight: 700 !important;
-                font-size: 7rem !important;
-                margin-bottom: 16px !important;
+                font-size: 4.2rem !important;
+                margin-bottom: 10px !important;
                 display: block !important;
             `);
         }
@@ -1036,7 +1028,7 @@ const PdfModule = (function() {
             setStyle(envelopeAddress, `
                 opacity: 0.6 !important;
                 line-height: 1.5 !important;
-                font-size: 5rem !important;
+                font-size: 3rem !important;
                 display: block !important;
             `);
         }
@@ -1046,13 +1038,13 @@ const PdfModule = (function() {
             setStyle(envelopeRecipient, `
                 display: block !important;
                 position: absolute !important;
-                right: 400px !important;
+                right: 240px !important;
                 top: 50% !important;
                 transform: translateY(-50%) !important;
                 text-align: center !important;
-                font-size: 7rem !important;
+                font-size: 4.2rem !important;
                 line-height: 1.8 !important;
-                width: 1400px !important;
+                width: 840px !important;
             `);
         }
 
@@ -1064,27 +1056,27 @@ const PdfModule = (function() {
                 align-items: center !important;
                 justify-content: center !important;
                 width: 100% !important;
-                min-width: 3200px !important;
+                min-width: 2400px !important;
             `);
         }
 
-        // Presentation slide - 7x bigger (3200x1800)
+        // Presentation slide - optimized size (2400x1350)
         const slide = clone.querySelector('.presentation-slide');
         if (slide) {
             setStyle(slide, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-bottom: 24px solid ${primaryColor} !important;
-                border-radius: 40px !important;
-                box-shadow: 0 24px 120px rgba(0,0,0,0.3) !important;
-                padding: 160px !important;
+                border-bottom: 18px solid ${primaryColor} !important;
+                border-radius: 30px !important;
+                box-shadow: 0 18px 90px rgba(0,0,0,0.3) !important;
+                padding: 120px !important;
                 opacity: 1 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
-                width: 3200px !important;
-                min-width: 3200px !important;
-                height: 1800px !important;
-                min-height: 1800px !important;
+                width: 2400px !important;
+                min-width: 2400px !important;
+                height: 1350px !important;
+                min-height: 1350px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 position: relative !important;
@@ -1095,25 +1087,25 @@ const PdfModule = (function() {
         }
 
         const slideHeader = clone.querySelector('.slide-header');
-        if (slideHeader) setStyle(slideHeader, 'display: flex !important; justify-content: flex-end !important; margin-bottom: 100px !important;');
+        if (slideHeader) setStyle(slideHeader, 'display: flex !important; justify-content: flex-end !important; margin-bottom: 75px !important;');
 
         const slideContent = clone.querySelector('.slide-content');
         if (slideContent) setStyle(slideContent, 'flex: 1 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; text-align: center !important;');
 
         const slideTitle = clone.querySelector('.slide-title');
-        if (slideTitle) setStyle(slideTitle, `color: ${secondaryColor} !important; font-size: 160px !important; font-weight: bold !important; margin-bottom: 50px !important; display: block !important;`);
+        if (slideTitle) setStyle(slideTitle, `color: ${secondaryColor} !important; font-size: 120px !important; font-weight: bold !important; margin-bottom: 38px !important; display: block !important;`);
 
         const slideSubtitle = clone.querySelector('.slide-subtitle');
-        if (slideSubtitle) setStyle(slideSubtitle, 'color: #666666 !important; font-size: 80px !important; display: block !important;');
+        if (slideSubtitle) setStyle(slideSubtitle, 'color: #666666 !important; font-size: 60px !important; display: block !important;');
 
         const slideFooter = clone.querySelector('.slide-footer');
-        if (slideFooter) setStyle(slideFooter, 'display: flex !important; justify-content: space-between !important; font-size: 50px !important; color: #999999 !important; margin-top: auto !important; width: 100% !important;');
+        if (slideFooter) setStyle(slideFooter, 'display: flex !important; justify-content: space-between !important; font-size: 38px !important; color: #999999 !important; margin-top: auto !important; width: 100% !important;');
 
         const slideLogo = clone.querySelector('.slide-logo');
         if (slideLogo) {
             const logoUrl = BrandbookModule.getLogoUrl();
             const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
-            setStyle(slideLogo, `width: 320px !important; height: 320px !important; background-size: contain !important; background-repeat: no-repeat !important; background-image: ${bgImage} !important; display: block !important;`);
+            setStyle(slideLogo, `width: 240px !important; height: 240px !important; background-size: contain !important; background-repeat: no-repeat !important; background-image: ${bgImage} !important; display: block !important;`);
         }
 
         // Add CSS to remove pseudo-elements that might cause issues
@@ -1164,7 +1156,7 @@ const PdfModule = (function() {
             });
 
             // Wait for QR code to render
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 50));
 
             // Get the canvas from QR code
             const qrCanvas = qrContainer.querySelector('canvas');
@@ -1484,7 +1476,7 @@ const PdfModule = (function() {
             tempContainer.appendChild(clone);
             prepareCloneForCapture(clone, brandbook);
 
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 50));
 
             const pngData = await htmlToImage.toPng(tempContainer, {
                 pixelRatio: 1.5,
