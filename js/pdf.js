@@ -688,23 +688,23 @@ const PdfModule = (function() {
             `);
         }
 
-        // Business card front - optimized size (1920x1120)
+        // Business card front - original size (2880x1680)
         const cardFront = clone.querySelector('.business-card-front');
         if (cardFront) {
             setStyle(cardFront, `
                 background-color: ${secondaryColor} !important;
                 background-image: none !important;
                 color: #ffffff !important;
-                border-bottom: 21px solid ${primaryColor} !important;
-                border-radius: 64px !important;
-                padding: 128px !important;
-                width: 1920px !important;
-                height: 1120px !important;
+                border-bottom: 32px solid ${primaryColor} !important;
+                border-radius: 96px !important;
+                padding: 192px !important;
+                width: 2880px !important;
+                height: 1680px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: center !important;
                 align-items: center !important;
-                box-shadow: 0 43px 171px rgba(0,0,0,0.4) !important;
+                box-shadow: 0 64px 256px rgba(0,0,0,0.4) !important;
                 opacity: 1 !important;
                 flex-shrink: 0 !important;
             `);
@@ -713,31 +713,31 @@ const PdfModule = (function() {
             if (cardLogo) {
                 const logoUrl = BrandbookModule.getLogoUrl();
                 const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
-                setStyle(cardLogo, `width: 341px !important; height: 341px !important; margin-bottom: 5rem !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; background-image: ${bgImage} !important; display: block !important;`);
+                setStyle(cardLogo, `width: 512px !important; height: 512px !important; margin-bottom: 8rem !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; background-image: ${bgImage} !important; display: block !important;`);
             }
 
             const cardBrandName = cardFront.querySelector('.card-brand-name');
-            if (cardBrandName) setStyle(cardBrandName, `font-size: 7rem !important; font-weight: 700 !important; margin-bottom: 2rem !important;`);
+            if (cardBrandName) setStyle(cardBrandName, `font-size: 11rem !important; font-weight: 700 !important; margin-bottom: 3rem !important;`);
 
             const cardTagline = cardFront.querySelector('.card-tagline');
-            if (cardTagline) setStyle(cardTagline, `font-size: 4rem !important; opacity: 0.8 !important;`);
+            if (cardTagline) setStyle(cardTagline, `font-size: 6rem !important; opacity: 0.8 !important;`);
         }
 
-        // Business card back - optimized size (1920x1120)
+        // Business card back - original size (2880x1680)
         const cardBack = clone.querySelector('.business-card-back');
         if (cardBack) {
             setStyle(cardBack, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-left: 21px solid ${primaryColor} !important;
-                border-radius: 64px !important;
-                padding: 128px !important;
-                width: 1920px !important;
-                height: 1120px !important;
+                border-left: 32px solid ${primaryColor} !important;
+                border-radius: 96px !important;
+                padding: 192px !important;
+                width: 2880px !important;
+                height: 1680px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: center !important;
-                box-shadow: 0 43px 171px rgba(0,0,0,0.4) !important;
+                box-shadow: 0 64px 256px rgba(0,0,0,0.4) !important;
                 opacity: 1 !important;
                 flex-shrink: 0 !important;
                 filter: none !important;
@@ -748,16 +748,16 @@ const PdfModule = (function() {
             if (cardContact) setStyle(cardContact, `display: flex !important; flex-direction: column !important; width: 100% !important;`);
 
             const contactName = cardBack.querySelector('.contact-name');
-            if (contactName) setStyle(contactName, `color: ${primaryColor} !important; font-weight: bold !important; font-size: 6rem !important; margin-bottom: 1.3rem !important; display: block !important;`);
+            if (contactName) setStyle(contactName, `color: ${primaryColor} !important; font-weight: bold !important; font-size: 9rem !important; margin-bottom: 2rem !important; display: block !important;`);
 
             const contactTitle = cardBack.querySelector('.contact-title');
-            if (contactTitle) setStyle(contactTitle, `font-size: 4rem !important; opacity: 0.6 !important; margin-bottom: 6.7rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; display: block !important; color: #333 !important;`);
+            if (contactTitle) setStyle(contactTitle, `font-size: 6rem !important; opacity: 0.6 !important; margin-bottom: 10rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; display: block !important; color: #333 !important;`);
 
             const contactInfo = cardBack.querySelector('.contact-info');
             if (contactInfo) {
-                setStyle(contactInfo, `font-size: 4.3rem !important; gap: 2rem !important; display: flex !important; flex-direction: column !important; color: #333 !important;`);
+                setStyle(contactInfo, `font-size: 6.5rem !important; gap: 3rem !important; display: flex !important; flex-direction: column !important; color: #333 !important;`);
                 contactInfo.querySelectorAll('span').forEach(span => {
-                    setStyle(span, `display: block !important; font-size: 4.3rem !important; color: #333 !important;`);
+                    setStyle(span, `display: block !important; font-size: 6.5rem !important; color: #333 !important;`);
                 });
             }
         }
