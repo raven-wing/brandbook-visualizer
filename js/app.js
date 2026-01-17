@@ -26,12 +26,12 @@
 
         // Fonts
         fontPrimarySearch: document.getElementById('font-primary-search'),
-        fontPrimary: document.getElementById('font-primary'),
+        fontPrimary: document.getElementById('font-primary-dropdown'),
         fontPrimaryPreview: document.getElementById('font-primary-preview'),
         fontPrimaryUsage: document.getElementById('font-primary-usage'),
 
         fontSecondarySearch: document.getElementById('font-secondary-search'),
-        fontSecondary: document.getElementById('font-secondary'),
+        fontSecondary: document.getElementById('font-secondary-dropdown'),
         fontSecondaryPreview: document.getElementById('font-secondary-preview'),
         fontSecondaryUsage: document.getElementById('font-secondary-usage'),
 
@@ -151,10 +151,14 @@
      * Initialize font picker components
      */
     function initFontPickers() {
+        // Re-query font dropdown elements to ensure DOM is ready
+        const fontPrimaryDropdown = document.getElementById('font-primary-dropdown');
+        const fontSecondaryDropdown = document.getElementById('font-secondary-dropdown');
+
         // Primary font picker
         FontsModule.initFontPicker(
             elements.fontPrimarySearch,
-            elements.fontPrimary,
+            fontPrimaryDropdown,
             elements.fontPrimaryPreview,
             'Montserrat',
             (fontFamily) => {
@@ -166,7 +170,7 @@
         // Secondary font picker
         FontsModule.initFontPicker(
             elements.fontSecondarySearch,
-            elements.fontSecondary,
+            fontSecondaryDropdown,
             elements.fontSecondaryPreview,
             'Open Sans',
             (fontFamily) => {
@@ -596,13 +600,13 @@
      */
     async function updateFontUI(type, typography) {
         const searchInput = elements[`font${capitalize(type)}Search`];
-        const selectInput = elements[`font${capitalize(type)}`];
+        const dropdownElement = document.getElementById(`font-${type}-dropdown`);
         const previewInput = elements[`font${capitalize(type)}Preview`];
         const usageInput = elements[`font${capitalize(type)}Usage`];
 
         searchInput.value = '';
-        FontsModule.filterFonts(selectInput, '', typography.family);
-        selectInput.value = typography.family;
+        FontsModule.setDropdownValue(dropdownElement, typography.family);
+        FontsModule.populateFontDropdown(dropdownElement, typography.family);
         usageInput.value = typography.usage || '';
 
         try {

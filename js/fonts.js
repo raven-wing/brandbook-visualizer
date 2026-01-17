@@ -102,61 +102,82 @@ const FontsModule = (function() {
     }
 
     /**
-     * Populate a select element with font options
-     * @param {HTMLSelectElement} selectElement - The select element to populate
+     * Populate a custom dropdown with font options
+     * @param {HTMLElement} dropdownElement - The dropdown container element
      * @param {string} selectedFont - The currently selected font
+     * @param {string} filterQuery - Optional filter query
      */
-    function populateFontSelect(selectElement, selectedFont = 'Montserrat') {
+    function populateFontDropdown(dropdownElement, selectedFont = 'Montserrat', filterQuery = '') {
         const fonts = getFontList();
-        selectElement.innerHTML = '';
-
-        fonts.forEach(font => {
-            const option = document.createElement('option');
-            option.value = font;
-            option.textContent = font;
-            if (font === selectedFont) {
-                option.selected = true;
-            }
-            selectElement.appendChild(option);
-        });
-    }
-
-    /**
-     * Filter font options based on search query
-     * @param {HTMLSelectElement} selectElement - The select element to filter
-     * @param {string} query - Search query
-     * @param {string} currentValue - Currently selected value
-     */
-    function filterFonts(selectElement, query, currentValue) {
-        const fonts = getFontList();
-        const filtered = query
-            ? fonts.filter(f => f.toLowerCase().includes(query.toLowerCase()))
+        const menu = dropdownElement.querySelector('.font-dropdown-menu');
+        const filtered = filterQuery
+            ? fonts.filter(f => f.toLowerCase().includes(filterQuery.toLowerCase()))
             : fonts;
 
-        selectElement.innerHTML = '';
+        menu.innerHTML = '';
 
         filtered.forEach(font => {
-            const option = document.createElement('option');
-            option.value = font;
-            option.textContent = font;
-            if (font === currentValue) {
-                option.selected = true;
+            const item = document.createElement('div');
+            item.className = 'font-dropdown-item';
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-value', font);
+            item.textContent = font;
+            if (font === selectedFont) {
+                item.classList.add('selected');
+                item.setAttribute('aria-selected', 'true');
             }
-            selectElement.appendChild(option);
+            menu.appendChild(item);
         });
     }
 
     /**
-     * Initialize font picker with search functionality
+     * Get the current value of a custom dropdown
+     * @param {HTMLElement} dropdownElement - The dropdown container
+     * @returns {string} The selected value
+     */
+    function getDropdownValue(dropdownElement) {
+        return dropdownElement.getAttribute('data-value') || '';
+    }
+
+    /**
+     * Set the value of a custom dropdown
+     * @param {HTMLElement} dropdownElement - The dropdown container
+     * @param {string} value - The value to set
+     */
+    function setDropdownValue(dropdownElement, value) {
+        dropdownElement.setAttribute('data-value', value);
+        const toggle = dropdownElement.querySelector('.font-dropdown-toggle');
+        if (toggle) {
+            toggle.textContent = value;
+        }
+        // Update selected state in menu
+        const items = dropdownElement.querySelectorAll('.font-dropdown-item');
+        items.forEach(item => {
+            if (item.getAttribute('data-value') === value) {
+                item.classList.add('selected');
+                item.setAttribute('aria-selected', 'true');
+            } else {
+                item.classList.remove('selected');
+                item.removeAttribute('aria-selected');
+            }
+        });
+    }
+
+    /**
+     * Initialize font picker with search functionality (custom dropdown version)
      * @param {HTMLInputElement} searchInput - Search input element
-     * @param {HTMLSelectElement} selectElement - Select element
+     * @param {HTMLElement} dropdownElement - Custom dropdown element
      * @param {HTMLElement} previewElement - Preview element
      * @param {string} defaultFont - Default font to select
      * @param {function} onChange - Callback when font changes
      */
-    function initFontPicker(searchInput, selectElement, previewElement, defaultFont, onChange) {
+    function initFontPicker(searchInput, dropdownElement, previewElement, defaultFont, onChange) {
+        const toggle = dropdownElement.querySelector('.font-dropdown-toggle');
+        const menu = dropdownElement.querySelector('.font-dropdown-menu');
+
         // Populate initial list
-        populateFontSelect(selectElement, defaultFont);
+        populateFontDropdown(dropdownElement, defaultFont);
+        setDropdownValue(dropdownElement, defaultFont);
 
         // Load default font
         loadFont(defaultFont).then(() => {
@@ -165,14 +186,42 @@ const FontsModule = (function() {
             }
         });
 
-        // Search functionality
-        searchInput.addEventListener('input', (e) => {
-            filterFonts(selectElement, e.target.value, selectElement.value);
+        // Toggle dropdown
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = dropdownElement.classList.contains('open');
+
+            // Close all other dropdowns
+            document.querySelectorAll('.font-dropdown.open').forEach(d => {
+                d.classList.remove('open');
+                d.querySelector('.font-dropdown-toggle').setAttribute('aria-expanded', 'false');
+            });
+
+            if (!isOpen) {
+                dropdownElement.classList.add('open');
+                toggle.setAttribute('aria-expanded', 'true');
+            }
         });
 
-        // Selection change
-        selectElement.addEventListener('change', async (e) => {
-            const fontFamily = e.target.value;
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdownElement.contains(e.target)) {
+                dropdownElement.classList.remove('open');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Handle item selection
+        menu.addEventListener('click', async (e) => {
+            const item = e.target.closest('.font-dropdown-item');
+            if (!item) return;
+
+            const fontFamily = item.getAttribute('data-value');
+            setDropdownValue(dropdownElement, fontFamily);
+            dropdownElement.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            searchInput.value = '';
+            populateFontDropdown(dropdownElement, fontFamily);
 
             try {
                 await loadFont(fontFamily);
@@ -188,6 +237,56 @@ const FontsModule = (function() {
                 console.error('Failed to load font:', error);
             }
         });
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const currentValue = getDropdownValue(dropdownElement);
+            populateFontDropdown(dropdownElement, currentValue, e.target.value);
+            if (!dropdownElement.classList.contains('open')) {
+                dropdownElement.classList.add('open');
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+        });
+
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const items = menu.querySelectorAll('.font-dropdown-item');
+                const highlighted = menu.querySelector('.font-dropdown-item.highlighted');
+                let index = Array.from(items).indexOf(highlighted);
+
+                if (e.key === 'ArrowDown') {
+                    index = index < items.length - 1 ? index + 1 : 0;
+                } else {
+                    index = index > 0 ? index - 1 : items.length - 1;
+                }
+
+                items.forEach(i => i.classList.remove('highlighted'));
+                if (items[index]) {
+                    items[index].classList.add('highlighted');
+                    items[index].scrollIntoView({ block: 'nearest' });
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const highlighted = menu.querySelector('.font-dropdown-item.highlighted');
+                if (highlighted) {
+                    highlighted.click();
+                }
+            } else if (e.key === 'Escape') {
+                dropdownElement.classList.remove('open');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    // Legacy functions for backwards compatibility
+    function populateFontSelect(selectElement, selectedFont = 'Montserrat') {
+        // Kept for backwards compatibility but now uses dropdown
+    }
+
+    function filterFonts(selectElement, query, currentValue) {
+        // Kept for backwards compatibility but now uses dropdown
     }
 
     /**
@@ -205,9 +304,12 @@ const FontsModule = (function() {
         getFontList,
         loadFont,
         populateFontSelect,
+        populateFontDropdown,
         filterFonts,
         initFontPicker,
-        getFontCssUrl
+        getFontCssUrl,
+        getDropdownValue,
+        setDropdownValue
     };
 })();
 

@@ -79,9 +79,10 @@
                         <label>Primary Font <span class="required">*</span></label>
                         <div class="font-selector">
                             <input type="text" id="font-primary-search" class="font-search" placeholder="Search fonts...">
-                            <select id="font-primary" class="font-select">
-                                <option value="Montserrat">Montserrat</option>
-                            </select>
+                            <div class="font-dropdown" id="font-primary-dropdown" data-value="Montserrat">
+                                <button type="button" class="font-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false">Montserrat</button>
+                                <div class="font-dropdown-menu" role="listbox"></div>
+                            </div>
                         </div>
                         <div class="font-preview" id="font-primary-preview" style="font-family: 'Montserrat', sans-serif;">
                             The quick brown fox jumps over the lazy dog
@@ -93,9 +94,10 @@
                         <label>Secondary Font <span class="optional">(optional)</span></label>
                         <div class="font-selector">
                             <input type="text" id="font-secondary-search" class="font-search" placeholder="Search fonts...">
-                            <select id="font-secondary" class="font-select">
-                                <option value="Open Sans">Open Sans</option>
-                            </select>
+                            <div class="font-dropdown" id="font-secondary-dropdown" data-value="Open Sans">
+                                <button type="button" class="font-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false">Open Sans</button>
+                                <div class="font-dropdown-menu" role="listbox"></div>
+                            </div>
                         </div>
                         <div class="font-preview" id="font-secondary-preview" style="font-family: 'Open Sans', sans-serif;">
                             The quick brown fox jumps over the lazy dog
