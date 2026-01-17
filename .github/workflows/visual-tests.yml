@@ -1,0 +1,76 @@
+name: Visual Regression Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      update_baselines:
+        description: 'Update baseline images'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  visual-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 8000 &
+          # Wait for server to be ready
+          for i in {1..10}; do
+            curl -s http://localhost:8000 > /dev/null && break
+            sleep 1
+          done
+
+      - name: Run visual tests
+        id: visual-tests
+        run: |
+          if [ "${{ github.event.inputs.update_baselines }}" == "true" ]; then
+            node tests/visual-tests.js --update
+          else
+            node tests/visual-tests.js
+          fi
+        continue-on-error: true
+
+      - name: Upload baseline images (on update)
+        if: github.event.inputs.update_baselines == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: tests/visual-baselines/
+          retention-days: 30
+
+      - name: Upload diff images (on failure)
+        if: steps.visual-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: tests/visual-diffs/
+          retention-days: 7
+
+      - name: Check test result
+        if: steps.visual-tests.outcome == 'failure'
+        run: |
+          echo "::error::Visual regression tests failed! Check the visual-diffs artifact for details."
+          exit 1

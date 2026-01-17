@@ -1,0 +1,3 @@
+# Ignore all diff images (generated during test runs)
+*
+!.gitignore
