@@ -13,11 +13,14 @@ const PdfModule = (function() {
     /**
      * Performance timing utility for PDF generation profiling
      */
+    // Enable timing with ?debug=true in URL
+    const debugMode = new URLSearchParams(window.location.search).has('debug');
+
     const PdfTiming = {
         marks: {},
         durations: {},
         mockupBreakdown: {},
-        enabled: true,
+        enabled: debugMode,
 
         start(label) {
             if (!this.enabled) return;
@@ -281,9 +284,11 @@ const PdfModule = (function() {
         pdf.save(fileName);
         PdfTiming.end('pdfSave');
 
-        // Complete total timing and print report
+        // Complete total timing and print report (if enabled)
         PdfTiming.end('generatePdf_total');
-        PdfTiming.printReport();
+        if (PdfTiming.enabled) {
+            PdfTiming.printReport();
+        }
     }
 
     /**
@@ -587,10 +592,31 @@ const PdfModule = (function() {
     }
 
     /**
+     * Suppress CORS errors from html-to-image during capture
+     */
+    function suppressCorsErrors() {
+        const originalError = console.error;
+        console.error = (...args) => {
+            const msg = args[0]?.toString() || '';
+            // Suppress known CORS errors from html-to-image
+            if (msg.includes('Error inlining remote css') ||
+                msg.includes('Error loading remote stylesheet') ||
+                msg.includes('Error while reading CSS rules')) {
+                return;
+            }
+            originalError.apply(console, args);
+        };
+        return () => { console.error = originalError; };
+    }
+
+    /**
      * Pre-capture all mockups sequentially (parallel causes issues with htmlToImage)
      */
     async function captureMockups(brandbook) {
         PdfTiming.start('captureMockups_total');
+
+        // Suppress CORS errors from html-to-image
+        const restoreConsole = suppressCorsErrors();
 
         const mockupConfigs = [
             { id: 'mockup-business-card', title: 'Business Card', num: '05' },
@@ -646,7 +672,9 @@ const PdfModule = (function() {
                     cacheBust: true
                 });
                 const htmlToImageDuration = performance.now() - htmlToImageStart;
-                console.log(`[PDF Timing] htmlToImage ${config.id}: ${htmlToImageDuration.toFixed(0)}ms`);
+                if (PdfTiming.enabled) {
+                    console.log(`[PDF Timing] htmlToImage ${config.id}: ${htmlToImageDuration.toFixed(0)}ms`);
+                }
 
                 // Get dimensions via Image
                 const img = new Image();
@@ -677,6 +705,9 @@ const PdfModule = (function() {
 
         document.body.removeChild(tempContainer);
         document.body.removeChild(overlay);
+
+        // Restore console.error
+        restoreConsole();
 
         PdfTiming.end('captureMockups_total');
         return captures;
