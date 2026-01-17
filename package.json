@@ -1,0 +1,14 @@
+{
+  "name": "brandbook-visualizer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Create beautiful brandbooks with colors, fonts, and logos",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "node tests/visual-tests.js",
+    "test:update": "node tests/visual-tests.js --update"
+  },
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  }
+}
