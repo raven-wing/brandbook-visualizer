@@ -62,6 +62,22 @@
         // Bind event listeners
         bindEvents();
 
+        // Check for URL parameter data (from QR code scan)
+        const urlData = checkUrlForData();
+        if (urlData) {
+            // Import from URL data
+            const brandbook = BrandbookModule.importFromUrlData(urlData);
+            if (brandbook) {
+                await updateUIFromBrandbook(brandbook);
+                showToast('Brandbook imported from QR code!', 'success');
+                // Clean up URL (remove data parameter)
+                cleanupUrl();
+                // Initial mockup update
+                MockupsModule.updateAll();
+                return;
+            }
+        }
+
         // Try to load saved data from localStorage
         const hasSaved = BrandbookModule.loadFromLocalStorage();
 
@@ -78,6 +94,24 @@
 
         // Initial mockup update
         MockupsModule.updateAll();
+    }
+
+    /**
+     * Check URL for brandbook data parameter (from QR code)
+     * @returns {string|null} Encoded data or null
+     */
+    function checkUrlForData() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('data');
+    }
+
+    /**
+     * Remove data parameter from URL without page reload
+     */
+    function cleanupUrl() {
+        const url = new URL(window.location);
+        url.searchParams.delete('data');
+        window.history.replaceState({}, document.title, url.pathname);
     }
 
     /**

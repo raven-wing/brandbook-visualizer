@@ -44,6 +44,10 @@ const PdfModule = (function() {
         // Mockups pages
         await addMockupPages(pdf, brandbook);
 
+        // QR Code page (last page)
+        pdf.addPage();
+        await addQrCodePage(pdf, brandbook);
+
         // Download PDF
         const fileName = `${brandbook.meta.name.toLowerCase().replace(/\s+/g, '-')}-brandbook.pdf`;
         pdf.save(fileName);
@@ -378,7 +382,7 @@ const PdfModule = (function() {
         // Transparent background so mockups float on dark PDF page
         // Container needs to be large enough for the biggest mockups (letterhead is 1440x2037)
         const tempContainer = document.createElement('div');
-        tempContainer.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:transparent;padding:20px;min-width:1600px;';
+        tempContainer.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:transparent;padding:20px;min-width:3000px;';
         document.body.appendChild(tempContainer);
 
         for (const config of mockupConfigs) {
@@ -663,21 +667,22 @@ const PdfModule = (function() {
         const avatarPlatforms = clone.querySelector('.avatar-platforms');
         if (avatarPlatforms) setStyle(avatarPlatforms, `max-width: 1920px !important; width: 100% !important;`);
 
-        // Letterhead - 3x wider (1440px width, landscape format for proper wide display)
+        // Letterhead - portrait orientation like real letter paper (2000x2750)
         const letterhead = clone.querySelector('.letterhead');
         if (letterhead) setStyle(letterhead, `
             background: #ffffff !important;
             background-color: #ffffff !important;
             opacity: 1 !important;
-            box-shadow: 0 12px 60px rgba(0,0,0,0.3) !important;
+            box-shadow: 0 24px 120px rgba(0,0,0,0.3) !important;
             border-radius: 24px !important;
             filter: none !important;
             backdrop-filter: none !important;
-            width: 1440px !important;
-            min-width: 1440px !important;
-            max-width: 1440px !important;
-            height: 900px !important;
-            padding: 60px !important;
+            width: 2000px !important;
+            min-width: 2000px !important;
+            max-width: 2000px !important;
+            height: 2750px !important;
+            min-height: 2750px !important;
+            padding: 100px !important;
             display: flex !important;
             flex-direction: column !important;
             margin: 0 auto !important;
@@ -692,73 +697,77 @@ const PdfModule = (function() {
             display: flex !important;
             align-items: center !important;
             gap: 2rem !important;
-            padding-bottom: 1.5rem !important;
-            margin-bottom: 2rem !important;
+            padding-bottom: 2rem !important;
+            margin-bottom: 3rem !important;
             width: 100% !important;
             flex-shrink: 0 !important;
         `);
 
         const letterheadLogo = clone.querySelector('.letterhead-logo');
-        if (letterheadLogo) setStyle(letterheadLogo, `width: 88px !important; height: 88px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; flex-shrink: 0 !important;`);
+        if (letterheadLogo) {
+            const logoUrl = BrandbookModule.getLogoUrl();
+            const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
+            setStyle(letterheadLogo, `width: 125px !important; height: 125px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; flex-shrink: 0 !important; background-image: ${bgImage} !important;`);
+        }
 
         const letterheadBrand = clone.querySelector('.letterhead-brand');
-        if (letterheadBrand) setStyle(letterheadBrand, `font-size: 2.75rem !important; font-weight: 700 !important;`);
+        if (letterheadBrand) setStyle(letterheadBrand, `font-size: 3.75rem !important; font-weight: 700 !important;`);
 
         const letterheadContent = clone.querySelector('.letterhead-content');
-        if (letterheadContent) setStyle(letterheadContent, `flex: 1 !important; font-size: 1.5rem !important; line-height: 1.6 !important; width: 100% !important;`);
+        if (letterheadContent) setStyle(letterheadContent, `flex: 1 !important; font-size: 2.2rem !important; line-height: 1.8 !important; width: 100% !important;`);
 
         const letterDate = clone.querySelector('.letter-date');
-        if (letterDate) setStyle(letterDate, `margin-bottom: 1.5rem !important; opacity: 0.6 !important; font-size: 1.25rem !important;`);
+        if (letterDate) setStyle(letterDate, `margin-bottom: 2.5rem !important; opacity: 0.6 !important; font-size: 1.9rem !important;`);
 
         const letterGreeting = clone.querySelector('.letter-greeting');
-        if (letterGreeting) setStyle(letterGreeting, `margin-bottom: 1rem !important; font-weight: 500 !important; font-size: 1.5rem !important;`);
+        if (letterGreeting) setStyle(letterGreeting, `margin-bottom: 2rem !important; font-weight: 500 !important; font-size: 2.2rem !important;`);
 
         const letterBody = clone.querySelector('.letter-body');
         if (letterBody) {
-            setStyle(letterBody, `font-size: 1.5rem !important; width: 100% !important;`);
-            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `margin-bottom: 1rem !important; opacity: 0.8 !important;`));
+            setStyle(letterBody, `font-size: 2.2rem !important; width: 100% !important;`);
+            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `margin-bottom: 2rem !important; opacity: 0.8 !important;`));
         }
 
         const letterSignature = clone.querySelector('.letter-signature');
-        if (letterSignature) setStyle(letterSignature, `margin-top: 2rem !important; font-size: 1.5rem !important;`);
+        if (letterSignature) setStyle(letterSignature, `margin-top: 4rem !important; font-size: 2.2rem !important;`);
 
         const signatureName = clone.querySelector('.signature-name');
-        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 1rem !important; font-size: 1.5rem !important;`);
+        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 2rem !important; font-size: 2.2rem !important;`);
 
         const signatureTitle = clone.querySelector('.signature-title');
-        if (signatureTitle) setStyle(signatureTitle, `font-size: 1.25rem !important; opacity: 0.6 !important;`);
+        if (signatureTitle) setStyle(signatureTitle, `font-size: 1.9rem !important; opacity: 0.6 !important;`);
 
         const letterheadFooter = clone.querySelector('.letterhead-footer');
         if (letterheadFooter) setStyle(letterheadFooter, `
-            border-top: 2px solid ${secondaryColor} !important;
+            border-top: 3px solid ${secondaryColor} !important;
             color: ${secondaryColor} !important;
             display: flex !important;
             justify-content: space-between !important;
-            gap: 2rem !important;
-            padding-top: 1.5rem !important;
-            font-size: 1.25rem !important;
+            gap: 2.5rem !important;
+            padding-top: 2.5rem !important;
+            font-size: 1.9rem !important;
             opacity: 0.5 !important;
             width: 100% !important;
             flex-shrink: 0 !important;
             margin-top: auto !important;
         `);
 
-        // Envelope - 2x bigger (1040px x ~520px) - using absolute positioning
+        // Envelope - 4x bigger (2080px x 1040px) - using absolute positioning
         const envelope = clone.querySelector('.envelope');
         if (envelope) {
             setStyle(envelope, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-top: 6px solid ${primaryColor} !important;
-                border-radius: 24px !important;
+                border-top: 12px solid ${primaryColor} !important;
+                border-radius: 48px !important;
                 padding: 0 !important;
-                box-shadow: 0 8px 40px rgba(0,0,0,0.3) !important;
+                box-shadow: 0 16px 80px rgba(0,0,0,0.3) !important;
                 opacity: 1 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
-                width: 1040px !important;
-                min-width: 1040px !important;
-                height: 520px !important;
+                width: 2080px !important;
+                min-width: 2080px !important;
+                height: 1040px !important;
                 margin: 0 auto !important;
                 color: #1a1a2e !important;
                 display: block !important;
@@ -773,23 +782,26 @@ const PdfModule = (function() {
             setStyle(envelopeSender, `
                 display: block !important;
                 position: absolute !important;
-                left: 50px !important;
-                top: 50px !important;
+                left: 100px !important;
+                top: 100px !important;
                 text-align: left !important;
-                width: 300px !important;
+                width: 600px !important;
             `);
         }
 
         const envelopeLogo = clone.querySelector('.envelope-logo');
         if (envelopeLogo) {
+            const logoUrl = BrandbookModule.getLogoUrl();
+            const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
             setStyle(envelopeLogo, `
-                width: 64px !important;
-                height: 64px !important;
+                width: 128px !important;
+                height: 128px !important;
                 background-size: contain !important;
                 background-repeat: no-repeat !important;
                 background-position: center !important;
-                margin-bottom: 12px !important;
+                margin-bottom: 24px !important;
                 display: block !important;
+                background-image: ${bgImage} !important;
             `);
         }
 
@@ -798,8 +810,8 @@ const PdfModule = (function() {
             setStyle(envelopeBrand, `
                 color: ${primaryColor} !important;
                 font-weight: 700 !important;
-                font-size: 1.75rem !important;
-                margin-bottom: 4px !important;
+                font-size: 3.5rem !important;
+                margin-bottom: 8px !important;
                 display: block !important;
             `);
         }
@@ -809,7 +821,7 @@ const PdfModule = (function() {
             setStyle(envelopeAddress, `
                 opacity: 0.6 !important;
                 line-height: 1.5 !important;
-                font-size: 1.25rem !important;
+                font-size: 2.5rem !important;
                 display: block !important;
             `);
         }
@@ -819,56 +831,75 @@ const PdfModule = (function() {
             setStyle(envelopeRecipient, `
                 display: block !important;
                 position: absolute !important;
-                right: 100px !important;
+                right: 200px !important;
                 top: 50% !important;
                 transform: translateY(-50%) !important;
                 text-align: center !important;
-                font-size: 1.75rem !important;
+                font-size: 3.5rem !important;
                 line-height: 1.8 !important;
-                width: 350px !important;
+                width: 700px !important;
             `);
         }
 
-        // Presentation slide - 1.5x bigger (960x540)
+        // Presentation mockup wrapper
+        const presentationMockup = clone.classList.contains('mockup-presentation') ? clone : clone.querySelector('.mockup-presentation');
+        if (presentationMockup) {
+            setStyle(presentationMockup, `
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 100% !important;
+                min-width: 3200px !important;
+            `);
+        }
+
+        // Presentation slide - 7x bigger (3200x1800)
         const slide = clone.querySelector('.presentation-slide');
         if (slide) {
             setStyle(slide, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-bottom: 7.5px solid ${primaryColor} !important;
-                border-radius: 12px !important;
-                box-shadow: 0 6px 30px rgba(0,0,0,0.3) !important;
-                padding: 45px !important;
+                border-bottom: 24px solid ${primaryColor} !important;
+                border-radius: 40px !important;
+                box-shadow: 0 24px 120px rgba(0,0,0,0.3) !important;
+                padding: 160px !important;
                 opacity: 1 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
-                width: 960px !important;
-                height: 540px !important;
+                width: 3200px !important;
+                min-width: 3200px !important;
+                height: 1800px !important;
+                min-height: 1800px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 position: relative !important;
                 margin: 0 auto !important;
                 color: #1a1a2e !important;
+                box-sizing: border-box !important;
             `);
         }
 
         const slideHeader = clone.querySelector('.slide-header');
-        if (slideHeader) setStyle(slideHeader, 'display: flex !important; justify-content: flex-end !important; margin-bottom: 30px !important;');
+        if (slideHeader) setStyle(slideHeader, 'display: flex !important; justify-content: flex-end !important; margin-bottom: 100px !important;');
 
         const slideContent = clone.querySelector('.slide-content');
         if (slideContent) setStyle(slideContent, 'flex: 1 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; text-align: center !important;');
 
         const slideTitle = clone.querySelector('.slide-title');
-        if (slideTitle) setStyle(slideTitle, `color: ${secondaryColor} !important; font-size: 42px !important; font-weight: bold !important; margin-bottom: 15px !important;`);
+        if (slideTitle) setStyle(slideTitle, `color: ${secondaryColor} !important; font-size: 160px !important; font-weight: bold !important; margin-bottom: 50px !important; display: block !important;`);
 
         const slideSubtitle = clone.querySelector('.slide-subtitle');
-        if (slideSubtitle) setStyle(slideSubtitle, 'color: #666666 !important; font-size: 21px !important;');
+        if (slideSubtitle) setStyle(slideSubtitle, 'color: #666666 !important; font-size: 80px !important; display: block !important;');
 
         const slideFooter = clone.querySelector('.slide-footer');
-        if (slideFooter) setStyle(slideFooter, 'display: flex !important; justify-content: space-between !important; font-size: 15px !important; color: #999999 !important; margin-top: auto !important;');
+        if (slideFooter) setStyle(slideFooter, 'display: flex !important; justify-content: space-between !important; font-size: 50px !important; color: #999999 !important; margin-top: auto !important; width: 100% !important;');
 
         const slideLogo = clone.querySelector('.slide-logo');
-        if (slideLogo) setStyle(slideLogo, 'width: 90px !important; height: 90px !important; background-size: contain !important; background-repeat: no-repeat !important;');
+        if (slideLogo) {
+            const logoUrl = BrandbookModule.getLogoUrl();
+            const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
+            setStyle(slideLogo, `width: 320px !important; height: 320px !important; background-size: contain !important; background-repeat: no-repeat !important; background-image: ${bgImage} !important; display: block !important;`);
+        }
 
         // Add CSS to remove pseudo-elements that might cause issues
         const styleTag = document.createElement('style');
@@ -877,6 +908,141 @@ const PdfModule = (function() {
             *::before, *::after { content: none !important; display: none !important; }
         `;
         clone.prepend(styleTag);
+    }
+
+    /**
+     * Add QR code page for easy brandbook sharing
+     */
+    async function addQrCodePage(pdf, brandbook) {
+        const primaryColor = hexToRgb(brandbook.colors.primary.hex);
+        const secondaryColor = hexToRgb(brandbook.colors.secondary.hex);
+
+        // Dark background
+        pdf.setFillColor(15, 15, 26);
+        pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
+
+        // Header
+        const pageNum = BrandbookModule.getLogoUrl() ? '10' : '09';
+        addModernPageHeader(pdf, 'Quick Import', pageNum, brandbook);
+
+        // Generate shareable URL
+        const baseUrl = BrandbookModule.getBaseUrl();
+        const shareUrl = BrandbookModule.generateShareUrl(baseUrl);
+
+        // Create temporary container for QR code generation
+        const tempContainer = document.createElement('div');
+        tempContainer.style.cssText = 'position:fixed;left:-9999px;top:0;';
+        document.body.appendChild(tempContainer);
+
+        const qrContainer = document.createElement('div');
+        tempContainer.appendChild(qrContainer);
+
+        try {
+            // Generate QR code with QRCode.js
+            const qr = new QRCode(qrContainer, {
+                text: shareUrl,
+                width: 400,
+                height: 400,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M // Medium error correction for balance
+            });
+
+            // Wait for QR code to render
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Get the canvas from QR code
+            const qrCanvas = qrContainer.querySelector('canvas');
+            if (qrCanvas) {
+                const qrDataUrl = qrCanvas.toDataURL('image/png');
+
+                // Calculate QR code size and position (centered, ~80mm square)
+                const qrSize = 80;
+                const qrX = (PAGE_WIDTH - qrSize) / 2;
+                const qrY = 85;
+
+                // White background for QR code with rounded corners
+                pdf.setFillColor(255, 255, 255);
+                roundedRect(pdf, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 8, 'F');
+
+                // Add QR code image
+                pdf.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+            }
+        } catch (e) {
+            console.warn('Could not generate QR code for PDF:', e);
+        } finally {
+            document.body.removeChild(tempContainer);
+        }
+
+        // Instructions title
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        const instructionY = 195;
+        pdf.text('Scan to Import Brandbook', PAGE_WIDTH / 2, instructionY, { align: 'center' });
+
+        // Instruction box
+        const boxY = 205;
+        pdf.setFillColor(25, 25, 40);
+        roundedRect(pdf, MARGIN, boxY, CONTENT_WIDTH, 55, 6, 'F');
+
+        // Instructions
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(200, 200, 200);
+
+        const instructions = [
+            '1. Scan this QR code with your smartphone camera',
+            '2. Open the link in your mobile browser',
+            '3. The brand colors and typography will auto-import',
+            '4. Note: Logo is not included in QR data (upload separately)'
+        ];
+
+        let instructionLineY = boxY + 16;
+        instructions.forEach((line, index) => {
+            pdf.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b);
+            pdf.circle(MARGIN + 14, instructionLineY - 1.5, 1.5, 'F');
+            pdf.text(line, MARGIN + 22, instructionLineY);
+            instructionLineY += 11;
+        });
+
+        // What's included section
+        const includedY = 270;
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Included in QR:', MARGIN, includedY);
+
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(150, 150, 150);
+
+        // Color swatches preview
+        const swatchY = includedY + 8;
+        const swatchSize = 8;
+        const colors = [brandbook.colors.primary, brandbook.colors.secondary, brandbook.colors.accent].filter(c => c);
+        let swatchX = MARGIN;
+
+        colors.forEach(color => {
+            if (color) {
+                const rgb = hexToRgb(color.hex);
+                pdf.setFillColor(rgb.r, rgb.g, rgb.b);
+                roundedRect(pdf, swatchX, swatchY, swatchSize, swatchSize, 2, 'F');
+                swatchX += swatchSize + 4;
+            }
+        });
+        pdf.text('Brand Colors', swatchX + 4, swatchY + 6);
+
+        // Typography info
+        const typographyY = swatchY + 15;
+        pdf.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b);
+        pdf.text('Aa', MARGIN, typographyY + 1);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(`${brandbook.typography.primary.family}${brandbook.typography.secondary ? ' + ' + brandbook.typography.secondary.family : ''}`, MARGIN + 12, typographyY);
+
+        // Page number
+        const totalPages = BrandbookModule.getLogoUrl() ? 10 : 9;
+        addPageNumber(pdf, totalPages);
     }
 
     /**

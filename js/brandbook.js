@@ -300,6 +300,81 @@ const BrandbookModule = (function() {
         return luminance > 0.5 ? '#000000' : '#FFFFFF';
     }
 
+    /**
+     * Get brandbook data for QR code (without logo to keep size small)
+     * @returns {Object} Brandbook data without logo
+     */
+    function getShareableData() {
+        return {
+            version: currentBrandbook.version,
+            meta: {
+                name: currentBrandbook.meta.name,
+                generator: currentBrandbook.meta.generator
+            },
+            colors: currentBrandbook.colors,
+            typography: currentBrandbook.typography
+        };
+    }
+
+    /**
+     * Generate a shareable URL with brandbook data encoded
+     * @param {string} baseUrl - Base URL of the app (e.g., https://username.github.io/brandbook-visualizer/)
+     * @returns {string} Full URL with encoded brandbook data
+     */
+    function generateShareUrl(baseUrl) {
+        const data = getShareableData();
+        const jsonString = JSON.stringify(data);
+        // Use base64 encoding for URL safety
+        const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+        // Remove trailing = padding to save space
+        const compactEncoded = encoded.replace(/=+$/, '');
+        return `${baseUrl}?data=${compactEncoded}`;
+    }
+
+    /**
+     * Import brandbook data from URL parameter
+     * @param {string} encodedData - Base64 encoded JSON data from URL
+     * @returns {Object|null} Imported brandbook data or null if invalid
+     */
+    function importFromUrlData(encodedData) {
+        try {
+            // Add back padding if needed
+            const padded = encodedData + '='.repeat((4 - encodedData.length % 4) % 4);
+            const jsonString = decodeURIComponent(escape(atob(padded)));
+            const data = JSON.parse(jsonString);
+
+            // Validate structure
+            if (!data.version || !data.meta || !data.colors || !data.typography) {
+                throw new Error('Invalid brandbook format');
+            }
+
+            // Merge with defaults to ensure all fields exist
+            currentBrandbook = {
+                ...createEmptyBrandbook(),
+                ...data,
+                meta: { ...createEmptyBrandbook().meta, ...data.meta },
+                colors: { ...createEmptyBrandbook().colors, ...data.colors },
+                typography: { ...createEmptyBrandbook().typography, ...data.typography },
+                // Keep logo empty since it's not in shareable data
+                logo: createEmptyBrandbook().logo
+            };
+
+            saveToLocalStorage();
+            return currentBrandbook;
+        } catch (e) {
+            console.error('Failed to import from URL data:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Get the current page base URL (for generating share URLs)
+     * @returns {string} Base URL without query parameters
+     */
+    function getBaseUrl() {
+        return window.location.origin + window.location.pathname;
+    }
+
     return {
         createEmptyBrandbook,
         getBrandbook,
@@ -317,7 +392,11 @@ const BrandbookModule = (function() {
         saveToLocalStorage,
         loadFromLocalStorage,
         clearLocalStorage,
-        hasSavedData
+        hasSavedData,
+        getShareableData,
+        generateShareUrl,
+        importFromUrlData,
+        getBaseUrl
     };
 })();
 
