@@ -1187,6 +1187,26 @@ body::before {
     font-size: 0.875rem;
 }
 
+.app-footer .disclaimer {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    margin-top: 0.5rem;
+}
+
+.disclaimer-banner {
+    background: rgba(255, 180, 0, 0.15);
+    border: 1px solid rgba(255, 180, 0, 0.4);
+    color: #ffb800;
+    text-align: center;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.875rem;
+    margin: -0.5rem auto 1.5rem auto;
+    max-width: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+}
+
 /* PDF Render Container - Hidden */
 #pdf-render-container {
     position: absolute;

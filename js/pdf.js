@@ -978,8 +978,22 @@ const PdfModule = (function() {
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
-        const instructionY = 195;
+        const instructionY = 185;
         pdf.text('Scan to Import Brandbook', PAGE_WIDTH / 2, instructionY, { align: 'center' });
+
+        // Clickable link for digital viewing
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b);
+        const linkText = 'Or click here to open directly';
+        const linkWidth = pdf.getTextWidth(linkText);
+        const linkX = (PAGE_WIDTH - linkWidth) / 2;
+        const linkY = instructionY + 10;
+        pdf.textWithLink(linkText, linkX, linkY, { url: shareUrl });
+        // Underline the link
+        pdf.setDrawColor(primaryColor.r, primaryColor.g, primaryColor.b);
+        pdf.setLineWidth(0.3);
+        pdf.line(linkX, linkY + 1, linkX + linkWidth, linkY + 1);
 
         // Instruction box
         const boxY = 205;
