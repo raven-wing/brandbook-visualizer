@@ -24,6 +24,9 @@ const PdfModule = (function() {
             compress: true  // Enable compression for smaller file size
         });
 
+        // Start capturing mockups early (parallel with static pages)
+        const mockupCapturesPromise = captureMockups(brandbook);
+
         // Title page
         await addTitlePage(pdf, brandbook);
 
@@ -41,8 +44,9 @@ const PdfModule = (function() {
             await addLogoPage(pdf, brandbook);
         }
 
-        // Mockups pages
-        await addMockupPages(pdf, brandbook);
+        // Wait for mockup captures to complete and add pages
+        const captures = await mockupCapturesPromise;
+        await addMockupPagesFromCaptures(pdf, captures, brandbook);
 
         // QR Code page (last page)
         pdf.addPage();
@@ -365,7 +369,7 @@ const PdfModule = (function() {
     }
 
     /**
-     * Pre-capture all mockups to avoid visible flashing
+     * Pre-capture all mockups sequentially (parallel causes issues with htmlToImage)
      */
     async function captureMockups(brandbook) {
         const mockupConfigs = [
@@ -378,9 +382,6 @@ const PdfModule = (function() {
 
         const captures = [];
 
-        // Single container for all captures (visible - will flash briefly)
-        // Transparent background so mockups float on dark PDF page
-        // Container needs to be large enough for the biggest mockups (letterhead is 1440x2037)
         const tempContainer = document.createElement('div');
         tempContainer.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:transparent;padding:20px;min-width:3000px;';
         document.body.appendChild(tempContainer);
@@ -393,7 +394,6 @@ const PdfModule = (function() {
             element.classList.add('active');
 
             try {
-                // Clone and prepare
                 tempContainer.innerHTML = '';
                 const clone = element.cloneNode(true);
                 clone.style.display = 'block';
@@ -401,15 +401,15 @@ const PdfModule = (function() {
                 tempContainer.appendChild(clone);
                 prepareCloneForCapture(clone, brandbook);
 
-                await new Promise(r => setTimeout(r, 100));
+                // Reduced delay
+                await new Promise(r => setTimeout(r, 50));
 
-                // Capture as PNG with transparent background
                 const pngData = await htmlToImage.toPng(tempContainer, {
                     pixelRatio: 1.5,
                     cacheBust: true
                 });
 
-                // Get dimensions
+                // Get dimensions via Image
                 const img = new Image();
                 await new Promise((resolve, reject) => {
                     img.onload = resolve;
@@ -435,14 +435,37 @@ const PdfModule = (function() {
         return captures;
     }
 
+    // Mockup layout configuration for PDF pages
+    const MOCKUP_LAYOUTS = {
+        'mockup-business-card': { yPos: 70, maxWidth: CONTENT_WIDTH },
+        'mockup-social-avatar': { yPos: 70, maxWidth: CONTENT_WIDTH },
+        'mockup-letterhead': { yPos: 70, maxWidth: CONTENT_WIDTH },
+        'mockup-envelope': { yPos: 95, maxWidth: PAGE_WIDTH - 20 },
+        'mockup-presentation': { yPos: 105, maxWidth: PAGE_WIDTH - 20 }
+    };
+
+    const DEFAULT_MOCKUP_LAYOUT = { yPos: 70, maxWidth: CONTENT_WIDTH };
+
+    /**
+     * Calculate scaled dimensions that fit within bounds while preserving aspect ratio
+     */
+    function calculateFitDimensions(sourceWidth, sourceHeight, maxWidth, maxHeight) {
+        let width = maxWidth;
+        let height = (sourceHeight / sourceWidth) * width;
+
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = (sourceWidth / sourceHeight) * height;
+        }
+
+        return { width, height };
+    }
+
     /**
      * Add mockup pages from pre-captured images
      */
-    async function addMockupPages(pdf, brandbook) {
+    function addMockupPagesFromCaptures(pdf, captures, brandbook) {
         let pageNum = BrandbookModule.getLogoUrl() ? 5 : 4;
-
-        // Capture all mockups first
-        const captures = await captureMockups(brandbook);
 
         // Now add pages from captures (no more DOM manipulation)
         for (const capture of captures) {
@@ -455,24 +478,13 @@ const PdfModule = (function() {
             // Header
             addModernPageHeader(pdf, capture.title, capture.num, brandbook);
 
-            // Calculate dimensions - envelope and presentation get special treatment
-            const isEnvelope = capture.id === 'mockup-envelope';
-            const isPresentation = capture.id === 'mockup-presentation';
-            const maxWidth = (isEnvelope || isPresentation) ? PAGE_WIDTH - 20 : CONTENT_WIDTH;
+            // Get layout configuration for this mockup type
+            const layout = MOCKUP_LAYOUTS[capture.id] || DEFAULT_MOCKUP_LAYOUT;
             const maxHeight = PAGE_HEIGHT - 100;
-
-            let width = maxWidth;
-            let height = (capture.height / capture.width) * width;
-
-            if (height > maxHeight) {
-                height = maxHeight;
-                width = (capture.width / capture.height) * height;
-            }
-
+            const { width, height } = calculateFitDimensions(capture.width, capture.height, layout.maxWidth, maxHeight);
             const xPos = (PAGE_WIDTH - width) / 2;
-            const yPos = isEnvelope ? 95 : isPresentation ? 105 : 70;
 
-            pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
+            pdf.addImage(capture.imgData, 'PNG', xPos, layout.yPos, width, height);
 
             addPageNumber(pdf, pageNum++);
         }
@@ -1212,10 +1224,24 @@ const PdfModule = (function() {
         } : { r: 0, g: 0, b: 0 };
     }
 
+    // Configuration for single mockup test PDFs
+    const SINGLE_MOCKUP_CONFIGS = {
+        'mockup-letterhead': { title: 'Letterhead', pageNum: '07', fileName: 'letterhead-test.pdf' },
+        'mockup-business-card': { title: 'Business Card', pageNum: '05', fileName: 'business-card-test.pdf' },
+        'mockup-social-avatar': { title: 'Social Avatar', pageNum: '06', fileName: 'social-avatar-test.pdf' },
+        'mockup-envelope': { title: 'Envelope', pageNum: '08', fileName: 'envelope-test.pdf' }
+    };
+
     /**
-     * Generate only the letterhead page for quick testing
+     * Generate a single mockup page PDF for quick testing
      */
-    async function generateLetterheadOnly() {
+    async function generateSingleMockupPdf(mockupId) {
+        const config = SINGLE_MOCKUP_CONFIGS[mockupId];
+        if (!config) {
+            console.warn(`Unknown mockup ID: ${mockupId}`);
+            return;
+        }
+
         const brandbook = BrandbookModule.getBrandbook();
         const { jsPDF } = window.jspdf;
 
@@ -1231,179 +1257,39 @@ const PdfModule = (function() {
         pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
 
         // Header
-        addModernPageHeader(pdf, 'Letterhead', '07', brandbook);
+        addModernPageHeader(pdf, config.title, config.pageNum, brandbook);
 
-        // Capture only the letterhead mockup
-        const capture = await captureSingleMockup('mockup-letterhead', brandbook);
+        // Capture the mockup
+        const capture = await captureSingleMockup(mockupId, brandbook);
 
         if (capture) {
-            const maxWidth = CONTENT_WIDTH;
+            const layout = MOCKUP_LAYOUTS[mockupId] || DEFAULT_MOCKUP_LAYOUT;
             const maxHeight = PAGE_HEIGHT - 100;
-
-            let width = maxWidth;
-            let height = (capture.height / capture.width) * width;
-
-            if (height > maxHeight) {
-                height = maxHeight;
-                width = (capture.width / capture.height) * height;
-            }
-
+            const { width, height } = calculateFitDimensions(capture.width, capture.height, layout.maxWidth, maxHeight);
             const xPos = (PAGE_WIDTH - width) / 2;
-            const yPos = 70;
 
-            pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
+            pdf.addImage(capture.imgData, 'PNG', xPos, layout.yPos, width, height);
         }
 
         addPageNumber(pdf, 1);
 
-        // Download PDF
-        pdf.save('letterhead-test.pdf');
+        pdf.save(config.fileName);
     }
 
-    /**
-     * Generate only the business card page for quick testing
-     */
-    async function generateBusinessCardOnly() {
-        const brandbook = BrandbookModule.getBrandbook();
-        const { jsPDF } = window.jspdf;
-
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4',
-            compress: true
-        });
-
-        // Dark background
-        pdf.setFillColor(15, 15, 26);
-        pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
-
-        // Header
-        addModernPageHeader(pdf, 'Business Card', '05', brandbook);
-
-        // Capture only the business card mockup
-        const capture = await captureSingleMockup('mockup-business-card', brandbook);
-
-        if (capture) {
-            const maxWidth = CONTENT_WIDTH;
-            const maxHeight = PAGE_HEIGHT - 100;
-
-            let width = maxWidth;
-            let height = (capture.height / capture.width) * width;
-
-            if (height > maxHeight) {
-                height = maxHeight;
-                width = (capture.width / capture.height) * height;
-            }
-
-            const xPos = (PAGE_WIDTH - width) / 2;
-            const yPos = 70;
-
-            pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
-        }
-
-        addPageNumber(pdf, 1);
-
-        // Download PDF
-        pdf.save('business-card-test.pdf');
+    function generateLetterheadOnly() {
+        return generateSingleMockupPdf('mockup-letterhead');
     }
 
-    /**
-     * Generate only the social avatar page for quick testing
-     */
-    async function generateSocialAvatarOnly() {
-        const brandbook = BrandbookModule.getBrandbook();
-        const { jsPDF } = window.jspdf;
-
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4',
-            compress: true
-        });
-
-        // Dark background
-        pdf.setFillColor(15, 15, 26);
-        pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
-
-        // Header
-        addModernPageHeader(pdf, 'Social Avatar', '06', brandbook);
-
-        // Capture only the social avatar mockup
-        const capture = await captureSingleMockup('mockup-social-avatar', brandbook);
-
-        if (capture) {
-            const maxWidth = CONTENT_WIDTH;
-            const maxHeight = PAGE_HEIGHT - 100;
-
-            let width = maxWidth;
-            let height = (capture.height / capture.width) * width;
-
-            if (height > maxHeight) {
-                height = maxHeight;
-                width = (capture.width / capture.height) * height;
-            }
-
-            const xPos = (PAGE_WIDTH - width) / 2;
-            const yPos = 70;
-
-            pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
-        }
-
-        addPageNumber(pdf, 1);
-
-        // Download PDF
-        pdf.save('social-avatar-test.pdf');
+    function generateBusinessCardOnly() {
+        return generateSingleMockupPdf('mockup-business-card');
     }
 
-    /**
-     * Generate only the envelope page for quick testing
-     */
-    async function generateEnvelopeOnly() {
-        const brandbook = BrandbookModule.getBrandbook();
-        const { jsPDF } = window.jspdf;
+    function generateSocialAvatarOnly() {
+        return generateSingleMockupPdf('mockup-social-avatar');
+    }
 
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4',
-            compress: true
-        });
-
-        // Dark background
-        pdf.setFillColor(15, 15, 26);
-        pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
-
-        // Header
-        addModernPageHeader(pdf, 'Envelope', '08', brandbook);
-
-        // Capture only the envelope mockup
-        const capture = await captureSingleMockup('mockup-envelope', brandbook);
-
-        if (capture) {
-            // Make envelope bigger - use more of the page width
-            const maxWidth = PAGE_WIDTH - 20;  // Almost full page width
-            const maxHeight = PAGE_HEIGHT - 80;
-
-            let width = maxWidth;
-            let height = (capture.height / capture.width) * width;
-
-            if (height > maxHeight) {
-                height = maxHeight;
-                width = (capture.width / capture.height) * height;
-            }
-
-            // Center horizontally, position higher on page
-            const xPos = (PAGE_WIDTH - width) / 2;
-            const yPos = 95;  // Slightly lower
-
-            pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
-        }
-
-        addPageNumber(pdf, 1);
-
-        // Download PDF
-        pdf.save('envelope-test.pdf');
+    function generateEnvelopeOnly() {
+        return generateSingleMockupPdf('mockup-envelope');
     }
 
     /**
