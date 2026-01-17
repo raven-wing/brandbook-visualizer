@@ -404,24 +404,39 @@ const PdfModule = (function() {
                 // Reduced delay
                 await new Promise(r => setTimeout(r, 50));
 
-                const pngData = await htmlToImage.toPng(tempContainer, {
-                    pixelRatio: 1.5,
-                    cacheBust: true
-                });
+                // Use JPEG for business card (large image), PNG for others
+                const useJpeg = config.id === 'mockup-business-card';
+                let imgData;
+                if (useJpeg) {
+                    // Set dark background for JPEG (no transparency support)
+                    tempContainer.style.background = '#0f0f1a';
+                    imgData = await htmlToImage.toJpeg(tempContainer, {
+                        pixelRatio: 1.0,  // Already 8x scale, no need for extra
+                        quality: 0.85,
+                        backgroundColor: '#0f0f1a',
+                        cacheBust: true
+                    });
+                } else {
+                    imgData = await htmlToImage.toPng(tempContainer, {
+                        pixelRatio: 1.5,
+                        cacheBust: true
+                    });
+                }
 
                 // Get dimensions via Image
                 const img = new Image();
                 await new Promise((resolve, reject) => {
                     img.onload = resolve;
                     img.onerror = reject;
-                    img.src = pngData;
+                    img.src = imgData;
                 });
 
                 captures.push({
                     ...config,
-                    imgData: pngData,
+                    imgData,
                     width: img.width,
-                    height: img.height
+                    height: img.height,
+                    format: useJpeg ? 'JPEG' : 'PNG'
                 });
 
             } catch (e) {
@@ -484,7 +499,7 @@ const PdfModule = (function() {
             const { width, height } = calculateFitDimensions(capture.width, capture.height, layout.maxWidth, maxHeight);
             const xPos = (PAGE_WIDTH - width) / 2;
 
-            pdf.addImage(capture.imgData, 'PNG', xPos, layout.yPos, width, height);
+            pdf.addImage(capture.imgData, capture.format || 'PNG', xPos, layout.yPos, width, height);
 
             addPageNumber(pdf, pageNum++);
         }
