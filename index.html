@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brandbook Visualizer</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Brandbook Visualizer</h1>
+            <p class="tagline">Create beautiful brandbooks with colors, fonts, and logos</p>
+        </header>
+
+        <main class="app-main">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="section-header">
+                    <h2>Brand Details</h2>
+                </div>
+
+                <!-- Brand Name -->
+                <div class="input-group">
+                    <label for="brand-name">Brand Name <span class="required">*</span></label>
+                    <input type="text" id="brand-name" placeholder="Enter your brand name" value="My Brand" aria-required="true" aria-describedby="brand-name-help">
+                    <span id="brand-name-help" class="visually-hidden">Required. Enter your brand or company name.</span>
+                </div>
+
+                <!-- Colors -->
+                <div class="section-header">
+                    <h3>Color Palette</h3>
+                </div>
+
+                <div class="color-inputs" role="group" aria-label="Color palette settings">
+                    <div class="color-input-group">
+                        <label id="label-primary-color">Primary Color <span class="required">*</span></label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-primary" value="#FF5733" aria-labelledby="label-primary-color" aria-describedby="primary-color-desc">
+                            <input type="text" id="color-primary-hex" class="hex-input" value="#FF5733" maxlength="7" aria-label="Primary color hex value" pattern="^#[0-9A-Fa-f]{6}$">
+                        </div>
+                        <input type="text" id="color-primary-name" class="color-name-input" placeholder="Color name (e.g., Sunset Orange)" value="Sunset Orange" aria-label="Primary color name">
+                        <span id="primary-color-desc" class="visually-hidden">Choose your main brand color</span>
+                    </div>
+
+                    <div class="color-input-group">
+                        <label id="label-secondary-color">Secondary Color <span class="required">*</span></label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-secondary" value="#2C3E50" aria-labelledby="label-secondary-color">
+                            <input type="text" id="color-secondary-hex" class="hex-input" value="#2C3E50" maxlength="7" aria-label="Secondary color hex value" pattern="^#[0-9A-Fa-f]{6}$">
+                        </div>
+                        <input type="text" id="color-secondary-name" class="color-name-input" placeholder="Color name (e.g., Midnight Blue)" value="Midnight Blue" aria-label="Secondary color name">
+                    </div>
+
+                    <div class="color-input-group">
+                        <label id="label-accent-color">Accent Color <span class="optional">(optional)</span></label>
+                        <div class="color-picker-row">
+                            <input type="color" id="color-accent" value="#27AE60" aria-labelledby="label-accent-color">
+                            <input type="text" id="color-accent-hex" class="hex-input" value="#27AE60" maxlength="7" aria-label="Accent color hex value" pattern="^#[0-9A-Fa-f]{6}$">
+                        </div>
+                        <input type="text" id="color-accent-name" class="color-name-input" placeholder="Color name (e.g., Emerald)" value="Emerald" aria-label="Accent color name">
+                    </div>
+                </div>
+
+                <!-- Typography -->
+                <div class="section-header">
+                    <h3>Typography</h3>
+                </div>
+
+                <div class="font-inputs">
+                    <div class="font-input-group">
+                        <label>Primary Font <span class="required">*</span></label>
+                        <div class="font-selector">
+                            <input type="text" id="font-primary-search" class="font-search" placeholder="Search fonts...">
+                            <select id="font-primary" class="font-select">
+                                <option value="Montserrat">Montserrat</option>
+                            </select>
+                        </div>
+                        <div class="font-preview" id="font-primary-preview" style="font-family: 'Montserrat', sans-serif;">
+                            The quick brown fox jumps over the lazy dog
+                        </div>
+                        <input type="text" id="font-primary-usage" class="font-usage-input" placeholder="Usage (e.g., Headings)" value="Headings">
+                    </div>
+
+                    <div class="font-input-group">
+                        <label>Secondary Font <span class="optional">(optional)</span></label>
+                        <div class="font-selector">
+                            <input type="text" id="font-secondary-search" class="font-search" placeholder="Search fonts...">
+                            <select id="font-secondary" class="font-select">
+                                <option value="Open Sans">Open Sans</option>
+                            </select>
+                        </div>
+                        <div class="font-preview" id="font-secondary-preview" style="font-family: 'Open Sans', sans-serif;">
+                            The quick brown fox jumps over the lazy dog
+                        </div>
+                        <input type="text" id="font-secondary-usage" class="font-usage-input" placeholder="Usage (e.g., Body text)" value="Body text">
+                    </div>
+                </div>
+
+                <!-- Logo -->
+                <div class="section-header">
+                    <h3>Logo</h3>
+                </div>
+
+                <div class="logo-input-group">
+                    <div class="logo-dropzone" id="logo-dropzone" role="button" tabindex="0" aria-label="Upload logo. Drag and drop or press Enter to browse files. Accepts SVG or PNG.">
+                        <div class="dropzone-content">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drag & drop your logo here</p>
+                            <p class="small">or click to browse (SVG or PNG)</p>
+                        </div>
+                        <input type="file" id="logo-input" accept=".svg,.png,image/svg+xml,image/png" hidden aria-label="Logo file upload">
+                    </div>
+                    <div class="logo-preview-container" id="logo-preview-container" style="display: none;" role="button" tabindex="0" aria-label="Logo uploaded. Press Enter to change, or Tab to remove button.">
+                        <img id="logo-preview" alt="Uploaded logo preview">
+                        <button type="button" id="logo-remove" class="btn-icon" title="Remove logo" aria-label="Remove uploaded logo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                        <div class="logo-hover-overlay" aria-hidden="true">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drag & drop your logo here</p>
+                            <p class="small">or click to browse (SVG or PNG)</p>
+                        </div>
+                        <span class="logo-hint" aria-hidden="true">Click to change logo</span>
+                    </div>
+                </div>
+
+                <!-- Export/Import Buttons -->
+                <div class="action-buttons">
+                    <button type="button" id="btn-export-json" class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download .brandbook
+                    </button>
+                    <button type="button" id="btn-export-pdf" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        Download PDF
+                    </button>
+                    <button type="button" id="btn-import" class="btn btn-outline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Import .brandbook
+                    </button>
+                    <input type="file" id="import-input" accept=".brandbook,.json" hidden>
+                </div>
+            </section>
+
+            <!-- Preview Section -->
+            <section class="preview-section">
+                <div class="section-header">
+                    <h2>Live Preview</h2>
+                </div>
+
+                <div class="mockup-tabs" role="tablist" aria-label="Mockup preview types">
+                    <button type="button" class="tab-btn active" data-mockup="business-card" role="tab" aria-selected="true" aria-controls="mockup-business-card" id="tab-business-card">Business Card</button>
+                    <button type="button" class="tab-btn" data-mockup="letterhead" role="tab" aria-selected="false" aria-controls="mockup-letterhead" id="tab-letterhead">Letterhead</button>
+                    <button type="button" class="tab-btn" data-mockup="envelope" role="tab" aria-selected="false" aria-controls="mockup-envelope" id="tab-envelope">Envelope</button>
+                    <button type="button" class="tab-btn" data-mockup="social-avatar" role="tab" aria-selected="false" aria-controls="mockup-social-avatar" id="tab-social-avatar">Social Avatar</button>
+                    <button type="button" class="tab-btn" data-mockup="presentation" role="tab" aria-selected="false" aria-controls="mockup-presentation" id="tab-presentation">Presentation</button>
+                </div>
+
+                <div class="mockup-container">
+                    <!-- Business Card Mockup -->
+                    <div class="mockup mockup-business-card active" id="mockup-business-card" role="tabpanel" aria-labelledby="tab-business-card">
+                        <div class="business-card">
+                            <div class="business-card-front">
+                                <div class="card-logo"></div>
+                                <div class="card-brand-name">My Brand</div>
+                                <div class="card-tagline">Your tagline here</div>
+                            </div>
+                            <div class="business-card-back">
+                                <div class="card-contact">
+                                    <div class="contact-name">John Doe</div>
+                                    <div class="contact-title">Creative Director</div>
+                                    <div class="contact-info">
+                                        <span>hello@mybrand.com</span>
+                                        <span>+1 234 567 890</span>
+                                        <span>www.mybrand.com</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Letterhead Mockup -->
+                    <div class="mockup mockup-letterhead" id="mockup-letterhead" role="tabpanel" aria-labelledby="tab-letterhead">
+                        <div class="letterhead">
+                            <div class="letterhead-header">
+                                <div class="letterhead-logo"></div>
+                                <div class="letterhead-brand">My Brand</div>
+                            </div>
+                            <div class="letterhead-content">
+                                <div class="letter-date">January 16, 2026</div>
+                                <div class="letter-greeting">Dear Valued Customer,</div>
+                                <div class="letter-body">
+                                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                                    <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                                </div>
+                                <div class="letter-signature">
+                                    <div>Best regards,</div>
+                                    <div class="signature-name">John Doe</div>
+                                    <div class="signature-title">Creative Director</div>
+                                </div>
+                            </div>
+                            <div class="letterhead-footer">
+                                <span>123 Brand Street, City, Country</span>
+                                <span>hello@mybrand.com</span>
+                                <span>www.mybrand.com</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Envelope Mockup -->
+                    <div class="mockup mockup-envelope" id="mockup-envelope" role="tabpanel" aria-labelledby="tab-envelope">
+                        <div class="envelope">
+                            <div class="envelope-sender">
+                                <div class="envelope-logo"></div>
+                                <div class="envelope-brand">My Brand</div>
+                                <div class="envelope-address">123 Brand Street<br>City, Country 12345</div>
+                            </div>
+                            <div class="envelope-recipient">
+                                <div>Recipient Name</div>
+                                <div>456 Recipient Ave</div>
+                                <div>City, Country 67890</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Avatar Mockup -->
+                    <div class="mockup mockup-social-avatar" id="mockup-social-avatar" role="tabpanel" aria-labelledby="tab-social-avatar">
+                        <div class="social-avatar-container">
+                            <div class="social-avatar">
+                                <div class="avatar-logo"></div>
+                            </div>
+                            <div class="avatar-platforms">
+                                <div class="platform-preview">
+                                    <span class="platform-label">Profile Preview</span>
+                                    <div class="platform-card">
+                                        <div class="platform-avatar"></div>
+                                        <div class="platform-info">
+                                            <div class="platform-name">My Brand</div>
+                                            <div class="platform-handle">@mybrand</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Presentation Mockup -->
+                    <div class="mockup mockup-presentation" id="mockup-presentation" role="tabpanel" aria-labelledby="tab-presentation">
+                        <div class="presentation-slide">
+                            <div class="slide-header">
+                                <div class="slide-logo"></div>
+                            </div>
+                            <div class="slide-content">
+                                <h1 class="slide-title">Welcome to My Brand</h1>
+                                <p class="slide-subtitle">Creating innovative solutions for tomorrow</p>
+                            </div>
+                            <div class="slide-footer">
+                                <span>www.mybrand.com</span>
+                                <span>Confidential</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>Brandbook Visualizer &mdash; Export to open-brandbook format or PDF</p>
+        </footer>
+    </div>
+
+    <!-- Hidden container for PDF generation -->
+    <div id="pdf-render-container" style="position: absolute; left: -9999px; top: 0;"></div>
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html-to-image: better CSS color/gradient support than html2canvas -->
+    <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
+
+    <!-- Application Scripts -->
+    <script src="js/fonts.js"></script>
+    <script src="js/brandbook.js"></script>
+    <script src="js/mockups.js"></script>
+    <script src="js/pdf.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
