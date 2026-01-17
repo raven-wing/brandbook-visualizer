@@ -11,9 +11,131 @@ const PdfModule = (function() {
     const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2);
 
     /**
+     * Performance timing utility for PDF generation profiling
+     */
+    const PdfTiming = {
+        marks: {},
+        durations: {},
+        mockupBreakdown: {},
+        enabled: true,
+
+        start(label) {
+            if (!this.enabled) return;
+            this.marks[label] = performance.now();
+        },
+
+        end(label) {
+            if (!this.enabled) return 0;
+            const duration = performance.now() - (this.marks[label] || performance.now());
+            this.durations[label] = duration;
+            return duration;
+        },
+
+        recordMockup(mockupId, duration) {
+            if (!this.enabled) return;
+            this.mockupBreakdown[mockupId] = duration;
+        },
+
+        reset() {
+            this.marks = {};
+            this.durations = {};
+            this.mockupBreakdown = {};
+        },
+
+        getReport() {
+            const total = this.durations['generatePdf_total'] || 0;
+            const mockupsTotal = this.durations['captureMockups_total'] || 0;
+            const titlePage = this.durations['addTitlePage'] || 0;
+            const logoPage = this.durations['addLogoPage'] || 0;
+            const qrCodePage = this.durations['addQrCodePage'] || 0;
+            const mockupPagesAssembly = this.durations['addMockupPagesFromCaptures'] || 0;
+            const pdfSave = this.durations['pdfSave'] || 0;
+            const colorPalettePage = this.durations['addColorPalettePage'] || 0;
+            const typographyPage = this.durations['addTypographyPage'] || 0;
+
+            const mockupsPercent = total > 0 ? ((mockupsTotal / total) * 100).toFixed(0) : 0;
+
+            return {
+                total,
+                mockupsTotal,
+                mockupsPercent,
+                mockupBreakdown: { ...this.mockupBreakdown },
+                titlePage,
+                logoPage,
+                qrCodePage,
+                mockupPagesAssembly,
+                pdfSave,
+                colorPalettePage,
+                typographyPage
+            };
+        },
+
+        printReport() {
+            const r = this.getReport();
+            const lines = [
+                '',
+                '\u2550'.repeat(43),
+                '  PDF Generation Timing Report',
+                '\u2550'.repeat(43),
+                `  Total:                    ${r.total.toFixed(0)}ms`,
+                '\u2500'.repeat(43),
+                `  Mockup Captures:          ${r.mockupsTotal.toFixed(0)}ms (${r.mockupsPercent}%)`
+            ];
+
+            // Add mockup breakdown
+            const mockupNames = {
+                'mockup-business-card': 'Business Card',
+                'mockup-social-avatar': 'Social Avatar',
+                'mockup-letterhead': 'Letterhead',
+                'mockup-envelope': 'Envelope',
+                'mockup-presentation': 'Presentation'
+            };
+
+            const mockupIds = Object.keys(r.mockupBreakdown);
+            mockupIds.forEach((id, index) => {
+                const name = mockupNames[id] || id;
+                const duration = r.mockupBreakdown[id];
+                const prefix = index === mockupIds.length - 1 ? '\u2514\u2500' : '\u251C\u2500';
+                lines.push(`    ${prefix} ${name.padEnd(16)} ${duration.toFixed(0)}ms`);
+            });
+
+            lines.push('\u2500'.repeat(43));
+            lines.push(`  Title Page:               ${r.titlePage.toFixed(0)}ms`);
+            lines.push(`  Color Palette Page:       ${r.colorPalettePage.toFixed(0)}ms`);
+            lines.push(`  Typography Page:          ${r.typographyPage.toFixed(0)}ms`);
+            if (r.logoPage > 0) {
+                lines.push(`  Logo Page:                ${r.logoPage.toFixed(0)}ms`);
+            }
+            lines.push(`  QR Code Page:             ${r.qrCodePage.toFixed(0)}ms`);
+            lines.push(`  Mockup Pages Assembly:    ${r.mockupPagesAssembly.toFixed(0)}ms`);
+            lines.push(`  PDF Save:                 ${r.pdfSave.toFixed(0)}ms`);
+            lines.push('\u2550'.repeat(43));
+
+            console.log(lines.join('\n'));
+            return lines.join('\n');
+        },
+
+        downloadReport() {
+            const report = this.printReport();
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pdf-timing-report-${timestamp}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    };
+
+    /**
      * Generate and download PDF brandbook
      */
     async function generatePdf() {
+        // Reset and start timing
+        PdfTiming.reset();
+        PdfTiming.start('generatePdf_total');
+
         const brandbook = BrandbookModule.getBrandbook();
         const { jsPDF } = window.jspdf;
 
@@ -28,33 +150,51 @@ const PdfModule = (function() {
         const mockupCapturesPromise = captureMockups(brandbook);
 
         // Title page
+        PdfTiming.start('addTitlePage');
         await addTitlePage(pdf, brandbook);
+        PdfTiming.end('addTitlePage');
 
         // Color palette page
         pdf.addPage();
+        PdfTiming.start('addColorPalettePage');
         addColorPalettePage(pdf, brandbook);
+        PdfTiming.end('addColorPalettePage');
 
         // Typography page
         pdf.addPage();
+        PdfTiming.start('addTypographyPage');
         addTypographyPage(pdf, brandbook);
+        PdfTiming.end('addTypographyPage');
 
         // Logo guidelines page
         if (BrandbookModule.getLogoUrl()) {
             pdf.addPage();
+            PdfTiming.start('addLogoPage');
             await addLogoPage(pdf, brandbook);
+            PdfTiming.end('addLogoPage');
         }
 
         // Wait for mockup captures to complete and add pages
         const captures = await mockupCapturesPromise;
+        PdfTiming.start('addMockupPagesFromCaptures');
         await addMockupPagesFromCaptures(pdf, captures, brandbook);
+        PdfTiming.end('addMockupPagesFromCaptures');
 
         // QR Code page (last page)
         pdf.addPage();
+        PdfTiming.start('addQrCodePage');
         await addQrCodePage(pdf, brandbook);
+        PdfTiming.end('addQrCodePage');
 
         // Download PDF
+        PdfTiming.start('pdfSave');
         const fileName = `${brandbook.meta.name.toLowerCase().replace(/\s+/g, '-')}-brandbook.pdf`;
         pdf.save(fileName);
+        PdfTiming.end('pdfSave');
+
+        // Complete total timing and print report
+        PdfTiming.end('generatePdf_total');
+        PdfTiming.printReport();
     }
 
     /**
@@ -372,6 +512,8 @@ const PdfModule = (function() {
      * Pre-capture all mockups sequentially (parallel causes issues with htmlToImage)
      */
     async function captureMockups(brandbook) {
+        PdfTiming.start('captureMockups_total');
+
         const mockupConfigs = [
             { id: 'mockup-business-card', title: 'Business Card', num: '05' },
             { id: 'mockup-social-avatar', title: 'Social Avatar', num: '06' },
@@ -387,6 +529,8 @@ const PdfModule = (function() {
         document.body.appendChild(tempContainer);
 
         for (const config of mockupConfigs) {
+            const mockupStartTime = performance.now();
+
             const element = document.getElementById(config.id);
             if (!element) continue;
 
@@ -407,6 +551,9 @@ const PdfModule = (function() {
                 // Use JPEG for business card (large image), PNG for others
                 const useJpeg = config.id === 'mockup-business-card';
                 let imgData;
+
+                // Time the actual htmlToImage conversion
+                const htmlToImageStart = performance.now();
                 if (useJpeg) {
                     // Set dark background for JPEG (no transparency support)
                     tempContainer.style.background = '#0f0f1a';
@@ -422,6 +569,8 @@ const PdfModule = (function() {
                         cacheBust: true
                     });
                 }
+                const htmlToImageDuration = performance.now() - htmlToImageStart;
+                console.log(`[PDF Timing] htmlToImage ${config.id}: ${htmlToImageDuration.toFixed(0)}ms`);
 
                 // Get dimensions via Image
                 const img = new Image();
@@ -444,9 +593,15 @@ const PdfModule = (function() {
             }
 
             if (!wasActive) element.classList.remove('active');
+
+            // Record per-mockup timing
+            const mockupDuration = performance.now() - mockupStartTime;
+            PdfTiming.recordMockup(config.id, mockupDuration);
         }
 
         document.body.removeChild(tempContainer);
+
+        PdfTiming.end('captureMockups_total');
         return captures;
     }
 
@@ -1362,7 +1517,9 @@ const PdfModule = (function() {
         generateSocialAvatarOnly,
         generateBusinessCardOnly,
         generateLetterheadOnly,
-        generateEnvelopeOnly
+        generateEnvelopeOnly,
+        // Expose timing utilities for debugging/profiling
+        timing: PdfTiming
     };
 })();
 
