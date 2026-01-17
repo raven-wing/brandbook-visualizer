@@ -698,22 +698,22 @@ const PdfModule = (function() {
         const platformHandle = clone.querySelector('.platform-handle');
         if (platformHandle) setStyle(platformHandle, `font-size: 72px !important; color: #6b7280 !important;`);
 
-        // Letterhead - portrait orientation like real letter paper (2000x2750)
+        // Letterhead - portrait orientation like real letter paper (5000x6875) - 2.5x bigger
         const letterhead = clone.querySelector('.letterhead');
         if (letterhead) setStyle(letterhead, `
             background: #ffffff !important;
             background-color: #ffffff !important;
             opacity: 1 !important;
-            box-shadow: 0 24px 120px rgba(0,0,0,0.3) !important;
-            border-radius: 24px !important;
+            box-shadow: 0 60px 300px rgba(0,0,0,0.3) !important;
+            border-radius: 60px !important;
             filter: none !important;
             backdrop-filter: none !important;
-            width: 2000px !important;
-            min-width: 2000px !important;
-            max-width: 2000px !important;
-            height: 2750px !important;
-            min-height: 2750px !important;
-            padding: 100px !important;
+            width: 5000px !important;
+            min-width: 5000px !important;
+            max-width: 5000px !important;
+            height: 6875px !important;
+            min-height: 6875px !important;
+            padding: 250px !important;
             display: flex !important;
             flex-direction: column !important;
             margin: 0 auto !important;
@@ -723,13 +723,13 @@ const PdfModule = (function() {
 
         const letterheadHeader = clone.querySelector('.letterhead-header');
         if (letterheadHeader) setStyle(letterheadHeader, `
-            border-bottom: 6px solid ${primaryColor} !important;
+            border-bottom: 15px solid ${primaryColor} !important;
             color: ${primaryColor} !important;
             display: flex !important;
             align-items: center !important;
-            gap: 2rem !important;
-            padding-bottom: 2rem !important;
-            margin-bottom: 3rem !important;
+            gap: 5rem !important;
+            padding-bottom: 5rem !important;
+            margin-bottom: 7.5rem !important;
             width: 100% !important;
             flex-shrink: 0 !important;
         `);
@@ -738,45 +738,45 @@ const PdfModule = (function() {
         if (letterheadLogo) {
             const logoUrl = BrandbookModule.getLogoUrl();
             const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
-            setStyle(letterheadLogo, `width: 125px !important; height: 125px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; flex-shrink: 0 !important; background-image: ${bgImage} !important;`);
+            setStyle(letterheadLogo, `width: 310px !important; height: 310px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; flex-shrink: 0 !important; background-image: ${bgImage} !important;`);
         }
 
         const letterheadBrand = clone.querySelector('.letterhead-brand');
-        if (letterheadBrand) setStyle(letterheadBrand, `font-size: 3.75rem !important; font-weight: 700 !important;`);
+        if (letterheadBrand) setStyle(letterheadBrand, `font-size: 9.4rem !important; font-weight: 700 !important;`);
 
         const letterheadContent = clone.querySelector('.letterhead-content');
-        if (letterheadContent) setStyle(letterheadContent, `flex: 1 !important; font-size: 2.2rem !important; line-height: 1.8 !important; width: 100% !important;`);
+        if (letterheadContent) setStyle(letterheadContent, `flex: 1 !important; font-size: 5.5rem !important; line-height: 1.8 !important; width: 100% !important;`);
 
         const letterDate = clone.querySelector('.letter-date');
-        if (letterDate) setStyle(letterDate, `margin-bottom: 2.5rem !important; opacity: 0.6 !important; font-size: 1.9rem !important;`);
+        if (letterDate) setStyle(letterDate, `margin-bottom: 6.25rem !important; opacity: 0.6 !important; font-size: 4.75rem !important;`);
 
         const letterGreeting = clone.querySelector('.letter-greeting');
-        if (letterGreeting) setStyle(letterGreeting, `margin-bottom: 2rem !important; font-weight: 500 !important; font-size: 2.2rem !important;`);
+        if (letterGreeting) setStyle(letterGreeting, `margin-bottom: 5rem !important; font-weight: 500 !important; font-size: 5.5rem !important;`);
 
         const letterBody = clone.querySelector('.letter-body');
         if (letterBody) {
-            setStyle(letterBody, `font-size: 2.2rem !important; width: 100% !important;`);
-            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `margin-bottom: 2rem !important; opacity: 0.8 !important;`));
+            setStyle(letterBody, `font-size: 5.5rem !important; width: 100% !important;`);
+            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `margin-bottom: 5rem !important; opacity: 0.8 !important;`));
         }
 
         const letterSignature = clone.querySelector('.letter-signature');
-        if (letterSignature) setStyle(letterSignature, `margin-top: 4rem !important; font-size: 2.2rem !important;`);
+        if (letterSignature) setStyle(letterSignature, `margin-top: 10rem !important; font-size: 5.5rem !important;`);
 
         const signatureName = clone.querySelector('.signature-name');
-        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 2rem !important; font-size: 2.2rem !important;`);
+        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 5rem !important; font-size: 5.5rem !important;`);
 
         const signatureTitle = clone.querySelector('.signature-title');
-        if (signatureTitle) setStyle(signatureTitle, `font-size: 1.9rem !important; opacity: 0.6 !important;`);
+        if (signatureTitle) setStyle(signatureTitle, `font-size: 4.75rem !important; opacity: 0.6 !important;`);
 
         const letterheadFooter = clone.querySelector('.letterhead-footer');
         if (letterheadFooter) setStyle(letterheadFooter, `
-            border-top: 3px solid ${secondaryColor} !important;
+            border-top: 7.5px solid ${secondaryColor} !important;
             color: ${secondaryColor} !important;
             display: flex !important;
             justify-content: space-between !important;
-            gap: 2.5rem !important;
-            padding-top: 2.5rem !important;
-            font-size: 1.9rem !important;
+            gap: 6.25rem !important;
+            padding-top: 6.25rem !important;
+            font-size: 4.75rem !important;
             opacity: 0.5 !important;
             width: 100% !important;
             flex-shrink: 0 !important;
@@ -1211,6 +1211,54 @@ const PdfModule = (function() {
     }
 
     /**
+     * Generate only the letterhead page for quick testing
+     */
+    async function generateLetterheadOnly() {
+        const brandbook = BrandbookModule.getBrandbook();
+        const { jsPDF } = window.jspdf;
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: true
+        });
+
+        // Dark background
+        pdf.setFillColor(15, 15, 26);
+        pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
+
+        // Header
+        addModernPageHeader(pdf, 'Letterhead', '07', brandbook);
+
+        // Capture only the letterhead mockup
+        const capture = await captureSingleMockup('mockup-letterhead', brandbook);
+
+        if (capture) {
+            const maxWidth = CONTENT_WIDTH;
+            const maxHeight = PAGE_HEIGHT - 100;
+
+            let width = maxWidth;
+            let height = (capture.height / capture.width) * width;
+
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = (capture.width / capture.height) * height;
+            }
+
+            const xPos = (PAGE_WIDTH - width) / 2;
+            const yPos = 70;
+
+            pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
+        }
+
+        addPageNumber(pdf, 1);
+
+        // Download PDF
+        pdf.save('letterhead-test.pdf');
+    }
+
+    /**
      * Generate only the business card page for quick testing
      */
     async function generateBusinessCardOnly() {
@@ -1359,7 +1407,8 @@ const PdfModule = (function() {
     return {
         generatePdf,
         generateSocialAvatarOnly,
-        generateBusinessCardOnly
+        generateBusinessCardOnly,
+        generateLetterheadOnly
     };
 })();
 
