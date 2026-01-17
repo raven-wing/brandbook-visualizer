@@ -170,6 +170,16 @@
                         </svg>
                         Import .brandbook
                     </button>
+                    <button type="button" id="btn-share-link" class="btn btn-outline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        Share Link
+                    </button>
                     <input type="file" id="import-input" accept=".brandbook,.json" hidden>
                 </div>
             </section>
@@ -304,6 +314,36 @@
 
     <!-- Hidden container for PDF generation -->
     <div id="pdf-render-container" style="position: absolute; left: -9999px; top: 0;"></div>
+
+    <!-- Share Link Modal -->
+    <div id="share-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="share-modal-title">Share Your Brandbook</h3>
+                <button type="button" id="share-modal-close" class="btn-icon modal-close" aria-label="Close modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="share-description">Copy the link below to share your brandbook. Anyone with this link can view your brand settings (logo not included).</p>
+                <div class="share-link-container">
+                    <input type="text" id="share-link-input" readonly aria-label="Shareable link">
+                    <button type="button" id="btn-copy-link" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div id="copy-feedback" class="copy-feedback" style="display: none;">Link copied to clipboard!</div>
+            </div>
+        </div>
+    </div>
 
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

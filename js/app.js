@@ -46,7 +46,15 @@
         btnExportJson: document.getElementById('btn-export-json'),
         btnExportPdf: document.getElementById('btn-export-pdf'),
         btnImport: document.getElementById('btn-import'),
-        importInput: document.getElementById('import-input')
+        importInput: document.getElementById('import-input'),
+        btnShareLink: document.getElementById('btn-share-link'),
+
+        // Share Modal
+        shareModal: document.getElementById('share-modal'),
+        shareModalClose: document.getElementById('share-modal-close'),
+        shareLinkInput: document.getElementById('share-link-input'),
+        btnCopyLink: document.getElementById('btn-copy-link'),
+        copyFeedback: document.getElementById('copy-feedback')
     };
 
     /**
@@ -238,6 +246,19 @@
         elements.btnExportPdf.addEventListener('click', handleExportPdf);
         elements.btnImport.addEventListener('click', () => elements.importInput.click());
         elements.importInput.addEventListener('change', handleImport);
+
+        // Share link button and modal
+        elements.btnShareLink.addEventListener('click', handleShareLink);
+        elements.shareModalClose.addEventListener('click', closeShareModal);
+        elements.shareModal.querySelector('.modal-backdrop').addEventListener('click', closeShareModal);
+        elements.btnCopyLink.addEventListener('click', handleCopyLink);
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && elements.shareModal.style.display !== 'none') {
+                closeShareModal();
+            }
+        });
     }
 
     /**
@@ -465,6 +486,64 @@
 
         // Reset file input
         e.target.value = '';
+    }
+
+    /**
+     * Handle share link button click
+     */
+    function handleShareLink() {
+        // Generate share URL
+        const baseUrl = BrandbookModule.getBaseUrl();
+        const shareUrl = BrandbookModule.generateShareUrl(baseUrl);
+
+        // Set the URL in the input
+        elements.shareLinkInput.value = shareUrl;
+
+        // Hide any previous feedback
+        elements.copyFeedback.style.display = 'none';
+
+        // Show modal
+        elements.shareModal.style.display = 'flex';
+
+        // Focus and select the input
+        setTimeout(() => {
+            elements.shareLinkInput.focus();
+            elements.shareLinkInput.select();
+        }, 100);
+    }
+
+    /**
+     * Close share modal
+     */
+    function closeShareModal() {
+        elements.shareModal.style.display = 'none';
+        elements.copyFeedback.style.display = 'none';
+    }
+
+    /**
+     * Handle copy link button click
+     */
+    async function handleCopyLink() {
+        const url = elements.shareLinkInput.value;
+
+        try {
+            await navigator.clipboard.writeText(url);
+            elements.copyFeedback.style.display = 'block';
+
+            // Hide feedback after 3 seconds
+            setTimeout(() => {
+                elements.copyFeedback.style.display = 'none';
+            }, 3000);
+        } catch (err) {
+            // Fallback for browsers that don't support clipboard API
+            elements.shareLinkInput.select();
+            document.execCommand('copy');
+            elements.copyFeedback.style.display = 'block';
+
+            setTimeout(() => {
+                elements.copyFeedback.style.display = 'none';
+            }, 3000);
+        }
     }
 
     /**
