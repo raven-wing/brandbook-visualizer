@@ -148,7 +148,7 @@ const PdfModule = (function() {
                     let imageData, format;
 
                     if (logoUrl.includes('image/svg')) {
-                        // Convert SVG to PNG
+                        // Convert SVG to PNG (preserves transparency)
                         const canvas = document.createElement('canvas');
                         const scale = 2;
                         canvas.width = (img.width || 200) * scale;
@@ -159,17 +159,11 @@ const PdfModule = (function() {
                         imageData = canvas.toDataURL('image/png');
                         format = 'PNG';
                     } else if (logoUrl.includes('image/png')) {
-                        // Convert PNG to JPEG for smaller size
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(img, 0, 0);
-                        imageData = canvas.toDataURL('image/jpeg', 0.9);
-                        format = 'JPEG';
+                        // Keep PNG format to preserve transparency
+                        imageData = logoUrl;
+                        format = 'PNG';
                     } else {
+                        // JPEG or other formats
                         imageData = logoUrl;
                         format = 'JPEG';
                     }
@@ -608,6 +602,12 @@ const PdfModule = (function() {
 
         const captures = [];
 
+        // Create overlay to hide capture process from user
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:#0f0f1a;z-index:100000;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;';
+        overlay.textContent = 'Generating PDF...';
+        document.body.appendChild(overlay);
+
         const tempContainer = document.createElement('div');
         tempContainer.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:transparent;padding:20px;min-width:3000px;';
         document.body.appendChild(tempContainer);
@@ -676,6 +676,7 @@ const PdfModule = (function() {
         }
 
         document.body.removeChild(tempContainer);
+        document.body.removeChild(overlay);
 
         PdfTiming.end('captureMockups_total');
         return captures;
