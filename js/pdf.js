@@ -586,20 +586,34 @@ const PdfModule = (function() {
             }
         }
 
-        // Social avatar - use solid primary color (gradients don't render well), 6x bigger
+        // Social avatar container - center everything
+        const socialAvatarContainer = clone.querySelector('.social-avatar-container');
+        if (socialAvatarContainer) {
+            setStyle(socialAvatarContainer, `
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 100% !important;
+                padding: 80px 0 !important;
+                gap: 120px !important;
+            `);
+        }
+
+        // Social avatar - use solid primary color (gradients don't render well)
         const socialAvatar = clone.querySelector('.social-avatar');
         if (socialAvatar) {
             setStyle(socialAvatar, `
                 background-color: ${primaryColor} !important;
                 background-image: none !important;
-                width: 840px !important;
-                height: 840px !important;
+                width: 1800px !important;
+                height: 1800px !important;
                 border-radius: 50% !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                margin: 120px auto 80px auto !important;
-                box-shadow: 0 24px 120px rgba(0,0,0,0.3) !important;
+                margin: 0 !important;
+                box-shadow: 0 80px 200px rgba(0,0,0,0.4), 0 0 0 32px rgba(255,255,255,0.1) !important;
                 opacity: 1 !important;
             `);
 
@@ -607,8 +621,52 @@ const PdfModule = (function() {
             if (avatarLogo) {
                 const logoUrl = BrandbookModule.getLogoUrl();
                 const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
-                setStyle(avatarLogo, `width: 420px !important; height: 420px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; background-image: ${bgImage} !important;`);
+                setStyle(avatarLogo, `width: 960px !important; height: 960px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; background-image: ${bgImage} !important; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.2)) !important;`);
             }
+        }
+
+        // Avatar platforms container - centered
+        const avatarPlatforms = clone.querySelector('.avatar-platforms');
+        if (avatarPlatforms) {
+            setStyle(avatarPlatforms, `
+                width: 2400px !important;
+                max-width: 2400px !important;
+                margin: 0 auto !important;
+            `);
+        }
+
+        // Platform preview container - better styling
+        const platformPreview = clone.querySelector('.platform-preview');
+        if (platformPreview) {
+            setStyle(platformPreview, `
+                background: #ffffff !important;
+                border-radius: 120px !important;
+                padding: 120px 160px !important;
+                box-shadow: 0 48px 160px rgba(0,0,0,0.25) !important;
+                margin: 0 !important;
+            `);
+
+            const platformLabel = platformPreview.querySelector('.platform-label');
+            if (platformLabel) setStyle(platformLabel, `
+                font-size: 64px !important;
+                margin-bottom: 96px !important;
+                color: #6b7280 !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.1em !important;
+                font-weight: 600 !important;
+                display: block !important;
+            `);
+        }
+
+        // Platform card
+        const platformCard = clone.querySelector('.platform-card');
+        if (platformCard) {
+            setStyle(platformCard, `
+                display: flex !important;
+                align-items: center !important;
+                gap: 96px !important;
+                background: transparent !important;
+            `);
         }
 
         const platformAvatar = clone.querySelector('.platform-avatar');
@@ -616,56 +674,29 @@ const PdfModule = (function() {
             setStyle(platformAvatar, `
                 background-color: ${primaryColor} !important;
                 background-image: none !important;
-                width: 288px !important;
-                height: 288px !important;
+                width: 320px !important;
+                height: 320px !important;
                 border-radius: 50% !important;
                 flex-shrink: 0 !important;
                 opacity: 1 !important;
+                box-shadow: 0 16px 48px rgba(0,0,0,0.15) !important;
             `);
         }
 
-        // Platform card - 6x bigger
-        const platformCard = clone.querySelector('.platform-card');
-        if (platformCard) {
-            setStyle(platformCard, `
-                background: #ffffff !important;
-                background-color: #ffffff !important;
-                border-radius: 72px !important;
-                padding: 72px 96px !important;
-                box-shadow: 0 24px 120px rgba(0,0,0,0.3) !important;
-                opacity: 1 !important;
-                filter: none !important;
-                backdrop-filter: none !important;
+        const platformInfo = clone.querySelector('.platform-info');
+        if (platformInfo) {
+            setStyle(platformInfo, `
                 display: flex !important;
-                align-items: center !important;
-                gap: 6rem !important;
+                flex-direction: column !important;
+                gap: 24px !important;
             `);
-        }
-
-        // Platform preview container - 6x bigger
-        const platformPreview = clone.querySelector('.platform-preview');
-        if (platformPreview) {
-            setStyle(platformPreview, `
-                background: #ffffff !important;
-                border-radius: 72px !important;
-                padding: 7.5rem !important;
-                box-shadow: 0 48px 144px rgba(0,0,0,0.3) !important;
-                margin-top: 60px !important;
-            `);
-
-            const platformLabel = platformPreview.querySelector('.platform-label');
-            if (platformLabel) setStyle(platformLabel, `font-size: 4.125rem !important; margin-bottom: 6rem !important;`);
         }
 
         const platformName = clone.querySelector('.platform-name');
-        if (platformName) setStyle(platformName, `font-size: 6rem !important; font-weight: 700 !important;`);
+        if (platformName) setStyle(platformName, `font-size: 96px !important; font-weight: 700 !important; color: #1a1a2e !important;`);
 
         const platformHandle = clone.querySelector('.platform-handle');
-        if (platformHandle) setStyle(platformHandle, `font-size: 5.25rem !important;`);
-
-        // Avatar platforms container - 6x bigger
-        const avatarPlatforms = clone.querySelector('.avatar-platforms');
-        if (avatarPlatforms) setStyle(avatarPlatforms, `max-width: 1920px !important; width: 100% !important;`);
+        if (platformHandle) setStyle(platformHandle, `font-size: 72px !important; color: #6b7280 !important;`);
 
         // Letterhead - portrait orientation like real letter paper (2000x2750)
         const letterhead = clone.querySelector('.letterhead');
@@ -1179,8 +1210,107 @@ const PdfModule = (function() {
         } : { r: 0, g: 0, b: 0 };
     }
 
+    /**
+     * Generate only the social avatar page for quick testing
+     */
+    async function generateSocialAvatarOnly() {
+        const brandbook = BrandbookModule.getBrandbook();
+        const { jsPDF } = window.jspdf;
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: true
+        });
+
+        // Dark background
+        pdf.setFillColor(15, 15, 26);
+        pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
+
+        // Header
+        addModernPageHeader(pdf, 'Social Avatar', '06', brandbook);
+
+        // Capture only the social avatar mockup
+        const capture = await captureSingleMockup('mockup-social-avatar', brandbook);
+
+        if (capture) {
+            const maxWidth = CONTENT_WIDTH;
+            const maxHeight = PAGE_HEIGHT - 100;
+
+            let width = maxWidth;
+            let height = (capture.height / capture.width) * width;
+
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = (capture.width / capture.height) * height;
+            }
+
+            const xPos = (PAGE_WIDTH - width) / 2;
+            const yPos = 70;
+
+            pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
+        }
+
+        addPageNumber(pdf, 1);
+
+        // Download PDF
+        pdf.save('social-avatar-test.pdf');
+    }
+
+    /**
+     * Capture a single mockup for testing
+     */
+    async function captureSingleMockup(mockupId, brandbook) {
+        const element = document.getElementById(mockupId);
+        if (!element) return null;
+
+        const tempContainer = document.createElement('div');
+        tempContainer.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:transparent;padding:20px;min-width:3000px;';
+        document.body.appendChild(tempContainer);
+
+        const wasActive = element.classList.contains('active');
+        element.classList.add('active');
+
+        try {
+            tempContainer.innerHTML = '';
+            const clone = element.cloneNode(true);
+            clone.style.display = 'block';
+            clone.classList.add('active');
+            tempContainer.appendChild(clone);
+            prepareCloneForCapture(clone, brandbook);
+
+            await new Promise(r => setTimeout(r, 100));
+
+            const pngData = await htmlToImage.toPng(tempContainer, {
+                pixelRatio: 1.5,
+                cacheBust: true
+            });
+
+            const img = new Image();
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = pngData;
+            });
+
+            return {
+                imgData: pngData,
+                width: img.width,
+                height: img.height
+            };
+        } catch (e) {
+            console.warn(`Could not capture ${mockupId}:`, e);
+            return null;
+        } finally {
+            if (!wasActive) element.classList.remove('active');
+            document.body.removeChild(tempContainer);
+        }
+    }
+
     return {
-        generatePdf
+        generatePdf,
+        generateSocialAvatarOnly
     };
 })();
 
