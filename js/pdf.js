@@ -455,8 +455,10 @@ const PdfModule = (function() {
             // Header
             addModernPageHeader(pdf, capture.title, capture.num, brandbook);
 
-            // Calculate dimensions - make mockups bigger
-            const maxWidth = CONTENT_WIDTH;
+            // Calculate dimensions - envelope and presentation get special treatment
+            const isEnvelope = capture.id === 'mockup-envelope';
+            const isPresentation = capture.id === 'mockup-presentation';
+            const maxWidth = (isEnvelope || isPresentation) ? PAGE_WIDTH - 20 : CONTENT_WIDTH;
             const maxHeight = PAGE_HEIGHT - 100;
 
             let width = maxWidth;
@@ -468,7 +470,7 @@ const PdfModule = (function() {
             }
 
             const xPos = (PAGE_WIDTH - width) / 2;
-            const yPos = 70;
+            const yPos = isEnvelope ? 95 : isPresentation ? 105 : 70;
 
             pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
 
@@ -783,22 +785,22 @@ const PdfModule = (function() {
             margin-top: auto !important;
         `);
 
-        // Envelope - 4x bigger (2080px x 1040px) - using absolute positioning
+        // Envelope - 8x bigger (4160px x 2080px) - using absolute positioning
         const envelope = clone.querySelector('.envelope');
         if (envelope) {
             setStyle(envelope, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-top: 12px solid ${primaryColor} !important;
-                border-radius: 48px !important;
+                border-top: 24px solid ${primaryColor} !important;
+                border-radius: 96px !important;
                 padding: 0 !important;
-                box-shadow: 0 16px 80px rgba(0,0,0,0.3) !important;
+                box-shadow: 0 32px 160px rgba(0,0,0,0.3) !important;
                 opacity: 1 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
-                width: 2080px !important;
-                min-width: 2080px !important;
-                height: 1040px !important;
+                width: 4160px !important;
+                min-width: 4160px !important;
+                height: 2080px !important;
                 margin: 0 auto !important;
                 color: #1a1a2e !important;
                 display: block !important;
@@ -813,10 +815,10 @@ const PdfModule = (function() {
             setStyle(envelopeSender, `
                 display: block !important;
                 position: absolute !important;
-                left: 100px !important;
-                top: 100px !important;
+                left: 200px !important;
+                top: 200px !important;
                 text-align: left !important;
-                width: 600px !important;
+                width: 1200px !important;
             `);
         }
 
@@ -825,12 +827,12 @@ const PdfModule = (function() {
             const logoUrl = BrandbookModule.getLogoUrl();
             const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
             setStyle(envelopeLogo, `
-                width: 128px !important;
-                height: 128px !important;
+                width: 256px !important;
+                height: 256px !important;
                 background-size: contain !important;
                 background-repeat: no-repeat !important;
                 background-position: center !important;
-                margin-bottom: 24px !important;
+                margin-bottom: 48px !important;
                 display: block !important;
                 background-image: ${bgImage} !important;
             `);
@@ -841,8 +843,8 @@ const PdfModule = (function() {
             setStyle(envelopeBrand, `
                 color: ${primaryColor} !important;
                 font-weight: 700 !important;
-                font-size: 3.5rem !important;
-                margin-bottom: 8px !important;
+                font-size: 7rem !important;
+                margin-bottom: 16px !important;
                 display: block !important;
             `);
         }
@@ -852,7 +854,7 @@ const PdfModule = (function() {
             setStyle(envelopeAddress, `
                 opacity: 0.6 !important;
                 line-height: 1.5 !important;
-                font-size: 2.5rem !important;
+                font-size: 5rem !important;
                 display: block !important;
             `);
         }
@@ -862,13 +864,13 @@ const PdfModule = (function() {
             setStyle(envelopeRecipient, `
                 display: block !important;
                 position: absolute !important;
-                right: 200px !important;
+                right: 400px !important;
                 top: 50% !important;
                 transform: translateY(-50%) !important;
                 text-align: center !important;
-                font-size: 3.5rem !important;
+                font-size: 7rem !important;
                 line-height: 1.8 !important;
-                width: 700px !important;
+                width: 1400px !important;
             `);
         }
 
@@ -1355,6 +1357,56 @@ const PdfModule = (function() {
     }
 
     /**
+     * Generate only the envelope page for quick testing
+     */
+    async function generateEnvelopeOnly() {
+        const brandbook = BrandbookModule.getBrandbook();
+        const { jsPDF } = window.jspdf;
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: true
+        });
+
+        // Dark background
+        pdf.setFillColor(15, 15, 26);
+        pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
+
+        // Header
+        addModernPageHeader(pdf, 'Envelope', '08', brandbook);
+
+        // Capture only the envelope mockup
+        const capture = await captureSingleMockup('mockup-envelope', brandbook);
+
+        if (capture) {
+            // Make envelope bigger - use more of the page width
+            const maxWidth = PAGE_WIDTH - 20;  // Almost full page width
+            const maxHeight = PAGE_HEIGHT - 80;
+
+            let width = maxWidth;
+            let height = (capture.height / capture.width) * width;
+
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = (capture.width / capture.height) * height;
+            }
+
+            // Center horizontally, position higher on page
+            const xPos = (PAGE_WIDTH - width) / 2;
+            const yPos = 95;  // Slightly lower
+
+            pdf.addImage(capture.imgData, 'PNG', xPos, yPos, width, height);
+        }
+
+        addPageNumber(pdf, 1);
+
+        // Download PDF
+        pdf.save('envelope-test.pdf');
+    }
+
+    /**
      * Capture a single mockup for testing
      */
     async function captureSingleMockup(mockupId, brandbook) {
@@ -1408,7 +1460,8 @@ const PdfModule = (function() {
         generatePdf,
         generateSocialAvatarOnly,
         generateBusinessCardOnly,
-        generateLetterheadOnly
+        generateLetterheadOnly,
+        generateEnvelopeOnly
     };
 })();
 
