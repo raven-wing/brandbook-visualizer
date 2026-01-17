@@ -44,6 +44,7 @@ const PdfModule = (function() {
 
         getReport() {
             const total = this.durations['generatePdf_total'] || 0;
+            const preloadLogo = this.durations['preloadLogo'] || 0;
             const mockupsTotal = this.durations['captureMockups_total'] || 0;
             const titlePage = this.durations['addTitlePage'] || 0;
             const logoPage = this.durations['addLogoPage'] || 0;
@@ -57,6 +58,7 @@ const PdfModule = (function() {
 
             return {
                 total,
+                preloadLogo,
                 mockupsTotal,
                 mockupsPercent,
                 mockupBreakdown: { ...this.mockupBreakdown },
@@ -100,6 +102,9 @@ const PdfModule = (function() {
             });
 
             lines.push('\u2500'.repeat(43));
+            if (r.preloadLogo > 0) {
+                lines.push(`  Logo Preload:             ${r.preloadLogo.toFixed(0)}ms`);
+            }
             lines.push(`  Title Page:               ${r.titlePage.toFixed(0)}ms`);
             lines.push(`  Color Palette Page:       ${r.colorPalettePage.toFixed(0)}ms`);
             lines.push(`  Typography Page:          ${r.typographyPage.toFixed(0)}ms`);
@@ -129,6 +134,91 @@ const PdfModule = (function() {
     };
 
     /**
+     * Preload and process logo image for reuse across PDF pages
+     * Returns cached image data ready for pdf.addImage()
+     */
+    async function preloadLogo() {
+        const logoUrl = BrandbookModule.getLogoUrl();
+        if (!logoUrl) return null;
+
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    let imageData, format;
+
+                    if (logoUrl.includes('image/svg')) {
+                        // Convert SVG to PNG
+                        const canvas = document.createElement('canvas');
+                        const scale = 2;
+                        canvas.width = (img.width || 200) * scale;
+                        canvas.height = (img.height || 200) * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.scale(scale, scale);
+                        ctx.drawImage(img, 0, 0, img.width || 200, img.height || 200);
+                        imageData = canvas.toDataURL('image/png');
+                        format = 'PNG';
+                    } else if (logoUrl.includes('image/png')) {
+                        // Convert PNG to JPEG for smaller size
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                        imageData = canvas.toDataURL('image/jpeg', 0.9);
+                        format = 'JPEG';
+                    } else {
+                        imageData = logoUrl;
+                        format = 'JPEG';
+                    }
+
+                    resolve({
+                        imageData,
+                        format,
+                        width: img.width,
+                        height: img.height
+                    });
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            img.onerror = reject;
+            img.src = logoUrl;
+        });
+    }
+
+    /**
+     * Add cached logo to PDF at specified position
+     */
+    function addCachedLogoToPdf(pdf, cachedLogo, x, y, maxWidth, maxHeight) {
+        if (!cachedLogo) return;
+
+        let finalWidth = maxWidth;
+        let finalHeight = maxHeight;
+        let finalX = x;
+        let finalY = y;
+
+        if (cachedLogo.width && cachedLogo.height) {
+            const imgAspect = cachedLogo.width / cachedLogo.height;
+            const boxAspect = maxWidth / maxHeight;
+
+            if (imgAspect > boxAspect) {
+                finalWidth = maxWidth;
+                finalHeight = maxWidth / imgAspect;
+                finalY = y + (maxHeight - finalHeight) / 2;
+            } else {
+                finalHeight = maxHeight;
+                finalWidth = maxHeight * imgAspect;
+                finalX = x + (maxWidth - finalWidth) / 2;
+            }
+        }
+
+        pdf.addImage(cachedLogo.imageData, cachedLogo.format, finalX, finalY, finalWidth, finalHeight);
+    }
+
+    /**
      * Generate and download PDF brandbook
      */
     async function generatePdf() {
@@ -138,6 +228,11 @@ const PdfModule = (function() {
 
         const brandbook = BrandbookModule.getBrandbook();
         const { jsPDF } = window.jspdf;
+
+        // Preload logo once for reuse
+        PdfTiming.start('preloadLogo');
+        const cachedLogo = await preloadLogo();
+        PdfTiming.end('preloadLogo');
 
         const pdf = new jsPDF({
             orientation: 'portrait',
@@ -151,7 +246,7 @@ const PdfModule = (function() {
 
         // Title page
         PdfTiming.start('addTitlePage');
-        await addTitlePage(pdf, brandbook);
+        await addTitlePage(pdf, brandbook, cachedLogo);
         PdfTiming.end('addTitlePage');
 
         // Color palette page
@@ -167,10 +262,10 @@ const PdfModule = (function() {
         PdfTiming.end('addTypographyPage');
 
         // Logo guidelines page
-        if (BrandbookModule.getLogoUrl()) {
+        if (cachedLogo) {
             pdf.addPage();
             PdfTiming.start('addLogoPage');
-            await addLogoPage(pdf, brandbook);
+            await addLogoPage(pdf, brandbook, cachedLogo);
             PdfTiming.end('addLogoPage');
         }
 
@@ -200,7 +295,7 @@ const PdfModule = (function() {
     /**
      * Add modern title page
      */
-    async function addTitlePage(pdf, brandbook) {
+    async function addTitlePage(pdf, brandbook, cachedLogo) {
         const primaryColor = hexToRgb(brandbook.colors.primary.hex);
         const secondaryColor = hexToRgb(brandbook.colors.secondary.hex);
 
@@ -219,21 +314,16 @@ const PdfModule = (function() {
             pdf.rect(i * (PAGE_WIDTH / gradientSteps), 0, PAGE_WIDTH / gradientSteps + 1, 8, 'F');
         }
 
-        // Logo centered
-        const logoUrl = BrandbookModule.getLogoUrl();
-        if (logoUrl) {
-            try {
-                await addImageToPdf(pdf, logoUrl, PAGE_WIDTH / 2 - 30, 80, 60, 60);
-            } catch (e) {
-                console.warn('Could not add logo to PDF:', e);
-            }
+        // Logo centered (using cached logo)
+        if (cachedLogo) {
+            addCachedLogoToPdf(pdf, cachedLogo, PAGE_WIDTH / 2 - 30, 80, 60, 60);
         }
 
         // Brand name - large, centered
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(42);
         pdf.setFont('helvetica', 'bold');
-        const brandNameY = logoUrl ? 165 : 120;
+        const brandNameY = cachedLogo ? 165 : 120;
         pdf.text(brandbook.meta.name, PAGE_WIDTH / 2, brandNameY, { align: 'center' });
 
         // Subtitle
@@ -452,7 +542,7 @@ const PdfModule = (function() {
     /**
      * Add logo guidelines page
      */
-    async function addLogoPage(pdf, brandbook) {
+    async function addLogoPage(pdf, brandbook, cachedLogo) {
         const primaryColor = hexToRgb(brandbook.colors.primary.hex);
         const secondaryColor = hexToRgb(brandbook.colors.secondary.hex);
 
@@ -463,18 +553,12 @@ const PdfModule = (function() {
         // Header
         addModernPageHeader(pdf, 'Logo', '03', brandbook);
 
-        const logoUrl = BrandbookModule.getLogoUrl();
-        if (logoUrl) {
-            try {
-                // Main logo display area
-                pdf.setFillColor(25, 25, 40);
-                roundedRect(pdf, MARGIN, 70, CONTENT_WIDTH, 100, 6, 'F');
+        if (cachedLogo) {
+            // Main logo display area
+            pdf.setFillColor(25, 25, 40);
+            roundedRect(pdf, MARGIN, 70, CONTENT_WIDTH, 100, 6, 'F');
 
-                await addImageToPdf(pdf, logoUrl, PAGE_WIDTH / 2 - 35, 90, 70, 60);
-
-            } catch (e) {
-                console.warn('Could not add logo to PDF:', e);
-            }
+            addCachedLogoToPdf(pdf, cachedLogo, PAGE_WIDTH / 2 - 35, 90, 70, 60);
         }
 
         // Logo on backgrounds section
