@@ -265,13 +265,17 @@
         });
     }
 
-    /**
-     * Bind color input events
-     */
+    function getColorElements(type) {
+        const key = capitalize(type);
+        return {
+            colorInput: elements[`color${key}`],
+            hexInput: elements[`color${key}Hex`],
+            nameInput: elements[`color${key}Name`]
+        };
+    }
+
     function bindColorInputs(type) {
-        const colorInput = elements[`color${capitalize(type)}`];
-        const hexInput = elements[`color${capitalize(type)}Hex`];
-        const nameInput = elements[`color${capitalize(type)}Name`];
+        const { colorInput, hexInput, nameInput } = getColorElements(type);
 
         // Color picker change
         colorInput.addEventListener('input', (e) => {
@@ -319,13 +323,8 @@
         });
     }
 
-    /**
-     * Update color in brandbook
-     */
     function updateColor(type) {
-        const hexInput = elements[`color${capitalize(type)}Hex`];
-        const nameInput = elements[`color${capitalize(type)}Name`];
-
+        const { hexInput, nameInput } = getColorElements(type);
         BrandbookModule.setColor(type, hexInput.value, nameInput.value);
         MockupsModule.updateAll();
     }
@@ -437,11 +436,9 @@
         showToast('Brandbook downloaded', 'success');
     }
 
-    /**
-     * Handle PDF export
-     */
     async function handleExportPdf() {
         const btn = elements.btnExportPdf;
+        const originalContent = btn.innerHTML;
         btn.disabled = true;
         btn.textContent = 'Generating PDF...';
 
@@ -453,15 +450,7 @@
             console.error(error);
         } finally {
             btn.disabled = false;
-            btn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                </svg>
-                Download PDF
-            `;
+            btn.innerHTML = originalContent;
         }
     }
 
@@ -582,14 +571,8 @@
         }
     }
 
-    /**
-     * Update color UI elements
-     */
     function updateColorUI(type, color) {
-        const colorInput = elements[`color${capitalize(type)}`];
-        const hexInput = elements[`color${capitalize(type)}Hex`];
-        const nameInput = elements[`color${capitalize(type)}Name`];
-
+        const { colorInput, hexInput, nameInput } = getColorElements(type);
         colorInput.value = color.hex;
         hexInput.value = color.hex.toUpperCase();
         nameInput.value = color.name || '';

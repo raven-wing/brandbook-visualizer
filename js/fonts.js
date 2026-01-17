@@ -280,15 +280,6 @@ const FontsModule = (function() {
         });
     }
 
-    // Legacy functions for backwards compatibility
-    function populateFontSelect(selectElement, selectedFont = 'Montserrat') {
-        // Kept for backwards compatibility but now uses dropdown
-    }
-
-    function filterFonts(selectElement, query, currentValue) {
-        // Kept for backwards compatibility but now uses dropdown
-    }
-
     /**
      * Get font CSS URL for embedding
      * @param {string} fontFamily - Font family name
@@ -303,9 +294,7 @@ const FontsModule = (function() {
     return {
         getFontList,
         loadFont,
-        populateFontSelect,
         populateFontDropdown,
-        filterFonts,
         initFontPicker,
         getFontCssUrl,
         getDropdownValue,

@@ -49,6 +49,18 @@ const BrandbookModule = (function() {
         };
     }
 
+    function mergeWithDefaults(data) {
+        const defaults = createEmptyBrandbook();
+        return {
+            ...defaults,
+            ...data,
+            meta: { ...defaults.meta, ...data.meta },
+            colors: { ...defaults.colors, ...data.colors },
+            typography: { ...defaults.typography, ...data.typography },
+            logo: { ...defaults.logo, ...data.logo }
+        };
+    }
+
     /**
      * Get the current brandbook data
      * @returns {Object} Current brandbook
@@ -188,16 +200,7 @@ const BrandbookModule = (function() {
                         throw new Error('Invalid brandbook format');
                     }
 
-                    // Merge with defaults to ensure all fields exist
-                    currentBrandbook = {
-                        ...createEmptyBrandbook(),
-                        ...data,
-                        meta: { ...createEmptyBrandbook().meta, ...data.meta },
-                        colors: { ...createEmptyBrandbook().colors, ...data.colors },
-                        typography: { ...createEmptyBrandbook().typography, ...data.typography },
-                        logo: { ...createEmptyBrandbook().logo, ...data.logo }
-                    };
-
+                    currentBrandbook = mergeWithDefaults(data);
                     resolve(currentBrandbook);
                 } catch (error) {
                     reject(new Error('Failed to parse brandbook file: ' + error.message));
@@ -240,15 +243,7 @@ const BrandbookModule = (function() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const data = JSON.parse(saved);
-                // Merge with defaults to ensure all fields exist
-                currentBrandbook = {
-                    ...createEmptyBrandbook(),
-                    ...data,
-                    meta: { ...createEmptyBrandbook().meta, ...data.meta },
-                    colors: { ...createEmptyBrandbook().colors, ...data.colors },
-                    typography: { ...createEmptyBrandbook().typography, ...data.typography },
-                    logo: { ...createEmptyBrandbook().logo, ...data.logo }
-                };
+                currentBrandbook = mergeWithDefaults(data);
                 return true;
             }
         } catch (e) {
@@ -343,22 +338,11 @@ const BrandbookModule = (function() {
             const jsonString = decodeURIComponent(escape(atob(padded)));
             const data = JSON.parse(jsonString);
 
-            // Validate structure
             if (!data.version || !data.meta || !data.colors || !data.typography) {
                 throw new Error('Invalid brandbook format');
             }
 
-            // Merge with defaults to ensure all fields exist
-            currentBrandbook = {
-                ...createEmptyBrandbook(),
-                ...data,
-                meta: { ...createEmptyBrandbook().meta, ...data.meta },
-                colors: { ...createEmptyBrandbook().colors, ...data.colors },
-                typography: { ...createEmptyBrandbook().typography, ...data.typography },
-                // Keep logo empty since it's not in shareable data
-                logo: createEmptyBrandbook().logo
-            };
-
+            currentBrandbook = mergeWithDefaults({ ...data, logo: { svg: null, png: null, usage: 'Primary logo' } });
             saveToLocalStorage();
             return currentBrandbook;
         } catch (e) {

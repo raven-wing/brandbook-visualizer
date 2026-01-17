@@ -1422,75 +1422,6 @@ const PdfModule = (function() {
     }
 
     /**
-     * Add image to PDF with aspect ratio preservation
-     */
-    async function addImageToPdf(pdf, dataUrl, x, y, maxWidth, maxHeight, preserveAspect = true) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                try {
-                    // Calculate dimensions preserving aspect ratio
-                    let finalWidth = maxWidth;
-                    let finalHeight = maxHeight;
-                    let finalX = x;
-                    let finalY = y;
-
-                    if (preserveAspect && img.width && img.height) {
-                        const imgAspect = img.width / img.height;
-                        const boxAspect = maxWidth / maxHeight;
-
-                        if (imgAspect > boxAspect) {
-                            // Image is wider - fit to width
-                            finalWidth = maxWidth;
-                            finalHeight = maxWidth / imgAspect;
-                            finalY = y + (maxHeight - finalHeight) / 2;
-                        } else {
-                            // Image is taller - fit to height
-                            finalHeight = maxHeight;
-                            finalWidth = maxHeight * imgAspect;
-                            finalX = x + (maxWidth - finalWidth) / 2;
-                        }
-                    }
-
-                    const format = dataUrl.includes('image/png') ? 'PNG' :
-                        dataUrl.includes('image/svg') ? 'PNG' : 'JPEG';
-
-                    if (dataUrl.includes('image/svg')) {
-                        const canvas = document.createElement('canvas');
-                        // Reduced scale for smaller file size (was 3)
-                        const scale = 2;
-                        canvas.width = (img.width || 200) * scale;
-                        canvas.height = (img.height || 200) * scale;
-                        const ctx = canvas.getContext('2d');
-                        ctx.scale(scale, scale);
-                        ctx.drawImage(img, 0, 0, img.width || 200, img.height || 200);
-                        const pngData = canvas.toDataURL('image/png');
-                        pdf.addImage(pngData, 'PNG', finalX, finalY, finalWidth, finalHeight);
-                    } else if (dataUrl.includes('image/png')) {
-                        // Convert PNG to JPEG for smaller size (unless it has transparency)
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(img, 0, 0);
-                        const jpegData = canvas.toDataURL('image/jpeg', 0.9);
-                        pdf.addImage(jpegData, 'JPEG', finalX, finalY, finalWidth, finalHeight);
-                    } else {
-                        pdf.addImage(dataUrl, format, finalX, finalY, finalWidth, finalHeight);
-                    }
-                    resolve();
-                } catch (e) {
-                    reject(e);
-                }
-            };
-            img.onerror = reject;
-            img.src = dataUrl;
-        });
-    }
-
-    /**
      * Convert hex color to RGB
      */
     function hexToRgb(hex) {
@@ -1554,22 +1485,6 @@ const PdfModule = (function() {
         pdf.save(config.fileName);
     }
 
-    function generateLetterheadOnly() {
-        return generateSingleMockupPdf('mockup-letterhead');
-    }
-
-    function generateBusinessCardOnly() {
-        return generateSingleMockupPdf('mockup-business-card');
-    }
-
-    function generateSocialAvatarOnly() {
-        return generateSingleMockupPdf('mockup-social-avatar');
-    }
-
-    function generateEnvelopeOnly() {
-        return generateSingleMockupPdf('mockup-envelope');
-    }
-
     /**
      * Capture a single mockup for testing
      */
@@ -1622,11 +1537,7 @@ const PdfModule = (function() {
 
     return {
         generatePdf,
-        generateSocialAvatarOnly,
-        generateBusinessCardOnly,
-        generateLetterheadOnly,
-        generateEnvelopeOnly,
-        // Expose timing utilities for debugging/profiling
+        generateSingleMockupPdf,
         timing: PdfTiming
     };
 })();

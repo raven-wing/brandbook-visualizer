@@ -4,9 +4,23 @@
  */
 
 const MockupsModule = (function() {
-    /**
-     * Update all mockups with current brandbook data
-     */
+    function getBrandData(brandbook) {
+        return {
+            primaryColor: brandbook.colors.primary.hex,
+            secondaryColor: brandbook.colors.secondary.hex,
+            accentColor: brandbook.colors.accent?.hex || brandbook.colors.primary.hex,
+            primaryFont: brandbook.typography.primary.family,
+            secondaryFont: brandbook.typography.secondary?.family || brandbook.typography.primary.family,
+            logoUrl: BrandbookModule.getLogoUrl(),
+            brandName: brandbook.meta.name
+        };
+    }
+
+    function setLogoBackground(element, logoUrl) {
+        if (!element) return;
+        element.style.backgroundImage = logoUrl ? `url(${logoUrl})` : 'none';
+    }
+
     function updateAll() {
         const brandbook = BrandbookModule.getBrandbook();
 
@@ -25,34 +39,21 @@ const MockupsModule = (function() {
         const mockup = document.getElementById('mockup-business-card');
         if (!mockup) return;
 
-        const primaryColor = brandbook.colors.primary.hex;
-        const secondaryColor = brandbook.colors.secondary.hex;
-        const primaryFont = brandbook.typography.primary.family;
-        const secondaryFont = brandbook.typography.secondary?.family || primaryFont;
-        const logoUrl = BrandbookModule.getLogoUrl();
-        const brandName = brandbook.meta.name;
+        const { primaryColor, secondaryColor, primaryFont, secondaryFont, logoUrl, brandName } = getBrandData(brandbook);
 
-        // Front card - use secondary color as solid background for better readability
         const front = mockup.querySelector('.business-card-front');
         front.style.background = secondaryColor;
         front.style.color = '#ffffff';
         front.style.borderBottom = `4px solid ${primaryColor}`;
 
-        const cardLogo = front.querySelector('.card-logo');
-        if (logoUrl) {
-            cardLogo.style.backgroundImage = `url(${logoUrl})`;
-        } else {
-            cardLogo.style.backgroundImage = 'none';
-        }
+        setLogoBackground(front.querySelector('.card-logo'), logoUrl);
 
         const cardBrandName = front.querySelector('.card-brand-name');
         cardBrandName.textContent = brandName;
         cardBrandName.style.fontFamily = `'${primaryFont}', sans-serif`;
 
-        const cardTagline = front.querySelector('.card-tagline');
-        cardTagline.style.fontFamily = `'${secondaryFont}', sans-serif`;
+        front.querySelector('.card-tagline').style.fontFamily = `'${secondaryFont}', sans-serif`;
 
-        // Back card
         const back = mockup.querySelector('.business-card-back');
         back.style.borderLeft = `4px solid ${primaryColor}`;
         back.style.background = '#ffffff';
@@ -62,13 +63,8 @@ const MockupsModule = (function() {
         contactName.style.fontFamily = `'${primaryFont}', sans-serif`;
         contactName.style.color = primaryColor;
 
-        const contactTitle = back.querySelector('.contact-title');
-        contactTitle.style.fontFamily = `'${secondaryFont}', sans-serif`;
-        contactTitle.style.color = '#666666';
-
-        const contactInfo = back.querySelector('.contact-info');
-        contactInfo.style.fontFamily = `'${secondaryFont}', sans-serif`;
-        contactInfo.style.color = '#333333';
+        back.querySelector('.contact-title').style.fontFamily = `'${secondaryFont}', sans-serif`;
+        back.querySelector('.contact-info').style.fontFamily = `'${secondaryFont}', sans-serif`;
     }
 
     /**
@@ -79,32 +75,19 @@ const MockupsModule = (function() {
         const mockup = document.getElementById('mockup-letterhead');
         if (!mockup) return;
 
-        const primaryColor = brandbook.colors.primary.hex;
-        const secondaryColor = brandbook.colors.secondary.hex;
-        const primaryFont = brandbook.typography.primary.family;
-        const secondaryFont = brandbook.typography.secondary?.family || primaryFont;
-        const logoUrl = BrandbookModule.getLogoUrl();
-        const brandName = brandbook.meta.name;
-
+        const { primaryColor, secondaryColor, primaryFont, secondaryFont, logoUrl, brandName } = getBrandData(brandbook);
         const letterhead = mockup.querySelector('.letterhead');
 
-        // Header
         const header = letterhead.querySelector('.letterhead-header');
         header.style.borderBottomColor = primaryColor;
         header.style.color = primaryColor;
 
-        const letterheadLogo = header.querySelector('.letterhead-logo');
-        if (logoUrl) {
-            letterheadLogo.style.backgroundImage = `url(${logoUrl})`;
-        } else {
-            letterheadLogo.style.backgroundImage = 'none';
-        }
+        setLogoBackground(header.querySelector('.letterhead-logo'), logoUrl);
 
         const letterheadBrand = header.querySelector('.letterhead-brand');
         letterheadBrand.textContent = brandName;
         letterheadBrand.style.fontFamily = `'${primaryFont}', sans-serif`;
 
-        // Content
         const content = letterhead.querySelector('.letterhead-content');
         content.style.fontFamily = `'${secondaryFont}', sans-serif`;
 
@@ -112,7 +95,6 @@ const MockupsModule = (function() {
         signatureName.style.fontFamily = `'${primaryFont}', sans-serif`;
         signatureName.style.color = primaryColor;
 
-        // Footer
         const footer = letterhead.querySelector('.letterhead-footer');
         footer.style.borderTopColor = secondaryColor;
         footer.style.color = secondaryColor;
@@ -126,34 +108,19 @@ const MockupsModule = (function() {
         const mockup = document.getElementById('mockup-envelope');
         if (!mockup) return;
 
-        const primaryColor = brandbook.colors.primary.hex;
-        const primaryFont = brandbook.typography.primary.family;
-        const secondaryFont = brandbook.typography.secondary?.family || primaryFont;
-        const logoUrl = BrandbookModule.getLogoUrl();
-        const brandName = brandbook.meta.name;
-
+        const { primaryColor, primaryFont, secondaryFont, logoUrl, brandName } = getBrandData(brandbook);
         const envelope = mockup.querySelector('.envelope');
         envelope.style.borderTop = `3px solid ${primaryColor}`;
 
-        // Sender section
-        const envelopeLogo = envelope.querySelector('.envelope-logo');
-        if (logoUrl) {
-            envelopeLogo.style.backgroundImage = `url(${logoUrl})`;
-        } else {
-            envelopeLogo.style.backgroundImage = 'none';
-        }
+        setLogoBackground(envelope.querySelector('.envelope-logo'), logoUrl);
 
         const envelopeBrand = envelope.querySelector('.envelope-brand');
         envelopeBrand.textContent = brandName;
         envelopeBrand.style.fontFamily = `'${primaryFont}', sans-serif`;
         envelopeBrand.style.color = primaryColor;
 
-        const envelopeAddress = envelope.querySelector('.envelope-address');
-        envelopeAddress.style.fontFamily = `'${secondaryFont}', sans-serif`;
-
-        // Recipient
-        const recipient = envelope.querySelector('.envelope-recipient');
-        recipient.style.fontFamily = `'${secondaryFont}', sans-serif`;
+        envelope.querySelector('.envelope-address').style.fontFamily = `'${secondaryFont}', sans-serif`;
+        envelope.querySelector('.envelope-recipient').style.fontFamily = `'${secondaryFont}', sans-serif`;
     }
 
     /**
@@ -164,26 +131,15 @@ const MockupsModule = (function() {
         const mockup = document.getElementById('mockup-social-avatar');
         if (!mockup) return;
 
-        const primaryColor = brandbook.colors.primary.hex;
-        const secondaryColor = brandbook.colors.secondary.hex;
-        const primaryFont = brandbook.typography.primary.family;
-        const logoUrl = BrandbookModule.getLogoUrl();
-        const brandName = brandbook.meta.name;
+        const { primaryColor, secondaryColor, primaryFont, logoUrl, brandName } = getBrandData(brandbook);
+        const gradient = `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`;
 
-        // Main avatar
         const avatar = mockup.querySelector('.social-avatar');
-        avatar.style.background = `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`;
+        avatar.style.background = gradient;
+        setLogoBackground(avatar.querySelector('.avatar-logo'), logoUrl);
 
-        const avatarLogo = avatar.querySelector('.avatar-logo');
-        if (logoUrl) {
-            avatarLogo.style.backgroundImage = `url(${logoUrl})`;
-        } else {
-            avatarLogo.style.backgroundImage = 'none';
-        }
-
-        // Platform preview
         const platformAvatar = mockup.querySelector('.platform-avatar');
-        platformAvatar.style.background = `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`;
+        platformAvatar.style.background = gradient;
         if (logoUrl) {
             platformAvatar.style.backgroundImage = `url(${logoUrl})`;
             platformAvatar.style.backgroundSize = 'contain';
@@ -195,8 +151,7 @@ const MockupsModule = (function() {
         platformName.textContent = brandName;
         platformName.style.fontFamily = `'${primaryFont}', sans-serif`;
 
-        const platformHandle = mockup.querySelector('.platform-handle');
-        platformHandle.textContent = '@' + brandName.toLowerCase().replace(/\s+/g, '');
+        mockup.querySelector('.platform-handle').textContent = '@' + brandName.toLowerCase().replace(/\s+/g, '');
     }
 
     /**
@@ -207,39 +162,20 @@ const MockupsModule = (function() {
         const mockup = document.getElementById('mockup-presentation');
         if (!mockup) return;
 
-        const primaryColor = brandbook.colors.primary.hex;
-        const secondaryColor = brandbook.colors.secondary.hex;
-        const accentColor = brandbook.colors.accent?.hex || primaryColor;
-        const primaryFont = brandbook.typography.primary.family;
-        const secondaryFont = brandbook.typography.secondary?.family || primaryFont;
-        const logoUrl = BrandbookModule.getLogoUrl();
-        const brandName = brandbook.meta.name;
+        const { primaryColor, secondaryColor, primaryFont, secondaryFont, logoUrl, brandName } = getBrandData(brandbook);
 
         const slide = mockup.querySelector('.presentation-slide');
         slide.style.background = '#ffffff';
         slide.style.borderBottom = `5px solid ${primaryColor}`;
 
-        // Logo
-        const slideLogo = slide.querySelector('.slide-logo');
-        if (logoUrl) {
-            slideLogo.style.backgroundImage = `url(${logoUrl})`;
-        } else {
-            slideLogo.style.backgroundImage = 'none';
-        }
+        setLogoBackground(slide.querySelector('.slide-logo'), logoUrl);
 
-        // Content
         const slideTitle = slide.querySelector('.slide-title');
         slideTitle.textContent = `Welcome to ${brandName}`;
         slideTitle.style.fontFamily = `'${primaryFont}', sans-serif`;
         slideTitle.style.color = secondaryColor;
 
-        const slideSubtitle = slide.querySelector('.slide-subtitle');
-        slideSubtitle.style.fontFamily = `'${secondaryFont}', sans-serif`;
-        slideSubtitle.style.color = '#666666';
-
-        // Footer
-        const slideFooter = slide.querySelector('.slide-footer');
-        slideFooter.style.color = '#999999';
+        slide.querySelector('.slide-subtitle').style.fontFamily = `'${secondaryFont}', sans-serif`;
     }
 
     /**
