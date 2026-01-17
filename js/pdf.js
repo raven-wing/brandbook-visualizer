@@ -375,10 +375,10 @@ const PdfModule = (function() {
         const captures = [];
 
         // Single container for all captures (visible - will flash briefly)
-        // Use dark background matching PDF page to ensure shadows blend correctly
-        const PDF_BG_COLOR = '#0f0f1a';
+        // Transparent background so mockups float on dark PDF page
+        // Container needs to be large enough for the biggest mockups (letterhead is 1440x2037)
         const tempContainer = document.createElement('div');
-        tempContainer.style.cssText = `position:fixed;left:0;top:0;z-index:99999;background:${PDF_BG_COLOR};padding:20px;min-width:800px;`;
+        tempContainer.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:transparent;padding:20px;min-width:1600px;';
         document.body.appendChild(tempContainer);
 
         for (const config of mockupConfigs) {
@@ -399,11 +399,10 @@ const PdfModule = (function() {
 
                 await new Promise(r => setTimeout(r, 100));
 
-                // Capture as PNG with dark background matching PDF
+                // Capture as PNG with transparent background
                 const pngData = await htmlToImage.toPng(tempContainer, {
                     pixelRatio: 1.5,
-                    cacheBust: true,
-                    backgroundColor: PDF_BG_COLOR
+                    cacheBust: true
                 });
 
                 // Get dimensions
@@ -493,83 +492,119 @@ const PdfModule = (function() {
             el.setAttribute('style', current + '; opacity: 1 !important; transform: none !important; transition: none !important;');
         });
 
-        // Business card container - ensure both sides show side by side
+        // Business card container - stack vertically (one under another), 4x bigger
         const businessCard = clone.querySelector('.business-card');
         if (businessCard) {
             setStyle(businessCard, `
                 display: flex !important;
-                gap: 2rem !important;
-                justify-content: center !important;
+                flex-direction: column !important;
                 flex-wrap: nowrap !important;
-                align-items: stretch !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                gap: 4rem !important;
                 opacity: 1 !important;
-                min-width: 760px !important;
+                width: 100% !important;
+                perspective: none !important;
             `);
         }
 
-        // Business card front - solid secondary color background
+        // Business card front - solid secondary color background, 4x bigger (1440x840)
         const cardFront = clone.querySelector('.business-card-front');
         if (cardFront) {
             setStyle(cardFront, `
                 background-color: ${secondaryColor} !important;
                 background-image: none !important;
                 color: #ffffff !important;
-                border-bottom: 4px solid ${primaryColor} !important;
-                border-radius: 12px !important;
-                padding: 24px !important;
-                width: 360px !important;
-                height: 210px !important;
+                border-bottom: 16px solid ${primaryColor} !important;
+                border-radius: 48px !important;
+                padding: 96px !important;
+                width: 1440px !important;
+                height: 840px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: center !important;
                 align-items: center !important;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+                box-shadow: 0 32px 128px rgba(0,0,0,0.4) !important;
                 opacity: 1 !important;
                 flex-shrink: 0 !important;
             `);
+
+            const cardLogo = cardFront.querySelector('.card-logo');
+            if (cardLogo) {
+                const logoUrl = BrandbookModule.getLogoUrl();
+                const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
+                setStyle(cardLogo, `width: 256px !important; height: 256px !important; margin-bottom: 4rem !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; background-image: ${bgImage} !important; display: block !important;`);
+            }
+
+            const cardBrandName = cardFront.querySelector('.card-brand-name');
+            if (cardBrandName) setStyle(cardBrandName, `font-size: 5.5rem !important; font-weight: 700 !important; margin-bottom: 1.5rem !important;`);
+
+            const cardTagline = cardFront.querySelector('.card-tagline');
+            if (cardTagline) setStyle(cardTagline, `font-size: 3rem !important; opacity: 0.8 !important;`);
         }
 
-        // Business card back
+        // Business card back - 4x bigger (1440x840)
         const cardBack = clone.querySelector('.business-card-back');
         if (cardBack) {
             setStyle(cardBack, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-left: 4px solid ${primaryColor} !important;
-                border-radius: 12px !important;
-                padding: 24px !important;
-                width: 360px !important;
-                height: 210px !important;
+                border-left: 16px solid ${primaryColor} !important;
+                border-radius: 48px !important;
+                padding: 96px !important;
+                width: 1440px !important;
+                height: 840px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: center !important;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+                box-shadow: 0 32px 128px rgba(0,0,0,0.4) !important;
                 opacity: 1 !important;
                 flex-shrink: 0 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
             `);
 
+            const cardContact = cardBack.querySelector('.card-contact');
+            if (cardContact) setStyle(cardContact, `display: flex !important; flex-direction: column !important; width: 100% !important;`);
+
             const contactName = cardBack.querySelector('.contact-name');
-            if (contactName) setStyle(contactName, `color: ${primaryColor} !important; font-weight: bold !important;`);
+            if (contactName) setStyle(contactName, `color: ${primaryColor} !important; font-weight: bold !important; font-size: 4.5rem !important; margin-bottom: 1rem !important; display: block !important;`);
+
+            const contactTitle = cardBack.querySelector('.contact-title');
+            if (contactTitle) setStyle(contactTitle, `font-size: 3rem !important; opacity: 0.6 !important; margin-bottom: 5rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; display: block !important; color: #333 !important;`);
+
+            const contactInfo = cardBack.querySelector('.contact-info');
+            if (contactInfo) {
+                setStyle(contactInfo, `font-size: 3.25rem !important; gap: 1.5rem !important; display: flex !important; flex-direction: column !important; color: #333 !important;`);
+                contactInfo.querySelectorAll('span').forEach(span => {
+                    setStyle(span, `display: block !important; font-size: 3.25rem !important; color: #333 !important;`);
+                });
+            }
         }
 
-        // Social avatar - use solid primary color (gradients don't render well)
+        // Social avatar - use solid primary color (gradients don't render well), 6x bigger
         const socialAvatar = clone.querySelector('.social-avatar');
         if (socialAvatar) {
             setStyle(socialAvatar, `
                 background-color: ${primaryColor} !important;
                 background-image: none !important;
-                width: 140px !important;
-                height: 140px !important;
+                width: 840px !important;
+                height: 840px !important;
                 border-radius: 50% !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                margin: 20px auto 30px auto !important;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+                margin: 120px auto 80px auto !important;
+                box-shadow: 0 24px 120px rgba(0,0,0,0.3) !important;
                 opacity: 1 !important;
             `);
+
+            const avatarLogo = socialAvatar.querySelector('.avatar-logo');
+            if (avatarLogo) {
+                const logoUrl = BrandbookModule.getLogoUrl();
+                const bgImage = logoUrl ? `url(${logoUrl})` : 'none';
+                setStyle(avatarLogo, `width: 420px !important; height: 420px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; background-image: ${bgImage} !important;`);
+            }
         }
 
         const platformAvatar = clone.querySelector('.platform-avatar');
@@ -577,78 +612,184 @@ const PdfModule = (function() {
             setStyle(platformAvatar, `
                 background-color: ${primaryColor} !important;
                 background-image: none !important;
-                width: 48px !important;
-                height: 48px !important;
+                width: 288px !important;
+                height: 288px !important;
                 border-radius: 50% !important;
                 flex-shrink: 0 !important;
                 opacity: 1 !important;
             `);
         }
 
-        // Platform card
+        // Platform card - 6x bigger
         const platformCard = clone.querySelector('.platform-card');
         if (platformCard) {
             setStyle(platformCard, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-radius: 12px !important;
-                padding: 12px 16px !important;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+                border-radius: 72px !important;
+                padding: 72px 96px !important;
+                box-shadow: 0 24px 120px rgba(0,0,0,0.3) !important;
                 opacity: 1 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 6rem !important;
             `);
         }
 
-        // Letterhead
+        // Platform preview container - 6x bigger
+        const platformPreview = clone.querySelector('.platform-preview');
+        if (platformPreview) {
+            setStyle(platformPreview, `
+                background: #ffffff !important;
+                border-radius: 72px !important;
+                padding: 7.5rem !important;
+                box-shadow: 0 48px 144px rgba(0,0,0,0.3) !important;
+                margin-top: 60px !important;
+            `);
+
+            const platformLabel = platformPreview.querySelector('.platform-label');
+            if (platformLabel) setStyle(platformLabel, `font-size: 4.125rem !important; margin-bottom: 6rem !important;`);
+        }
+
+        const platformName = clone.querySelector('.platform-name');
+        if (platformName) setStyle(platformName, `font-size: 6rem !important; font-weight: 700 !important;`);
+
+        const platformHandle = clone.querySelector('.platform-handle');
+        if (platformHandle) setStyle(platformHandle, `font-size: 5.25rem !important;`);
+
+        // Avatar platforms container - 6x bigger
+        const avatarPlatforms = clone.querySelector('.avatar-platforms');
+        if (avatarPlatforms) setStyle(avatarPlatforms, `max-width: 1920px !important; width: 100% !important;`);
+
+        // Letterhead - 3x wider (1440px width, landscape format for proper wide display)
         const letterhead = clone.querySelector('.letterhead');
-        if (letterhead) setStyle(letterhead, 'background: #ffffff !important; background-color: #ffffff !important; opacity: 1 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important; border-radius: 8px !important; filter: none !important; backdrop-filter: none !important;');
+        if (letterhead) setStyle(letterhead, `
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            opacity: 1 !important;
+            box-shadow: 0 12px 60px rgba(0,0,0,0.3) !important;
+            border-radius: 24px !important;
+            filter: none !important;
+            backdrop-filter: none !important;
+            width: 1440px !important;
+            min-width: 1440px !important;
+            max-width: 1440px !important;
+            height: 900px !important;
+            padding: 60px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            margin: 0 auto !important;
+            color: #1a1a2e !important;
+            box-sizing: border-box !important;
+        `);
 
         const letterheadHeader = clone.querySelector('.letterhead-header');
-        if (letterheadHeader) setStyle(letterheadHeader, `border-bottom-color: ${primaryColor} !important; color: ${primaryColor} !important;`);
+        if (letterheadHeader) setStyle(letterheadHeader, `
+            border-bottom: 6px solid ${primaryColor} !important;
+            color: ${primaryColor} !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 2rem !important;
+            padding-bottom: 1.5rem !important;
+            margin-bottom: 2rem !important;
+            width: 100% !important;
+            flex-shrink: 0 !important;
+        `);
+
+        const letterheadLogo = clone.querySelector('.letterhead-logo');
+        if (letterheadLogo) setStyle(letterheadLogo, `width: 88px !important; height: 88px !important; background-size: contain !important; background-repeat: no-repeat !important; background-position: center !important; flex-shrink: 0 !important;`);
+
+        const letterheadBrand = clone.querySelector('.letterhead-brand');
+        if (letterheadBrand) setStyle(letterheadBrand, `font-size: 2.75rem !important; font-weight: 700 !important;`);
+
+        const letterheadContent = clone.querySelector('.letterhead-content');
+        if (letterheadContent) setStyle(letterheadContent, `flex: 1 !important; font-size: 1.5rem !important; line-height: 1.6 !important; width: 100% !important;`);
+
+        const letterDate = clone.querySelector('.letter-date');
+        if (letterDate) setStyle(letterDate, `margin-bottom: 1.5rem !important; opacity: 0.6 !important; font-size: 1.25rem !important;`);
+
+        const letterGreeting = clone.querySelector('.letter-greeting');
+        if (letterGreeting) setStyle(letterGreeting, `margin-bottom: 1rem !important; font-weight: 500 !important; font-size: 1.5rem !important;`);
+
+        const letterBody = clone.querySelector('.letter-body');
+        if (letterBody) {
+            setStyle(letterBody, `font-size: 1.5rem !important; width: 100% !important;`);
+            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `margin-bottom: 1rem !important; opacity: 0.8 !important;`));
+        }
+
+        const letterSignature = clone.querySelector('.letter-signature');
+        if (letterSignature) setStyle(letterSignature, `margin-top: 2rem !important; font-size: 1.5rem !important;`);
 
         const signatureName = clone.querySelector('.signature-name');
-        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important;`);
+        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 1rem !important; font-size: 1.5rem !important;`);
+
+        const signatureTitle = clone.querySelector('.signature-title');
+        if (signatureTitle) setStyle(signatureTitle, `font-size: 1.25rem !important; opacity: 0.6 !important;`);
 
         const letterheadFooter = clone.querySelector('.letterhead-footer');
-        if (letterheadFooter) setStyle(letterheadFooter, `border-top-color: ${secondaryColor} !important; color: ${secondaryColor} !important;`);
+        if (letterheadFooter) setStyle(letterheadFooter, `
+            border-top: 2px solid ${secondaryColor} !important;
+            color: ${secondaryColor} !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            gap: 2rem !important;
+            padding-top: 1.5rem !important;
+            font-size: 1.25rem !important;
+            opacity: 0.5 !important;
+            width: 100% !important;
+            flex-shrink: 0 !important;
+            margin-top: auto !important;
+        `);
 
-        // Envelope - preserve proper layout
+        // Envelope - 2x bigger (1040px x ~520px) - using absolute positioning
         const envelope = clone.querySelector('.envelope');
         if (envelope) {
             setStyle(envelope, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-top: 3px solid ${primaryColor} !important;
-                border-radius: 12px !important;
-                padding: 1.5rem !important;
-                position: relative !important;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+                border-top: 6px solid ${primaryColor} !important;
+                border-radius: 24px !important;
+                padding: 0 !important;
+                box-shadow: 0 8px 40px rgba(0,0,0,0.3) !important;
                 opacity: 1 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
+                width: 1040px !important;
+                min-width: 1040px !important;
+                height: 520px !important;
+                margin: 0 auto !important;
+                color: #1a1a2e !important;
+                display: block !important;
+                position: relative !important;
+                box-sizing: border-box !important;
+                overflow: visible !important;
             `);
         }
 
         const envelopeSender = clone.querySelector('.envelope-sender');
         if (envelopeSender) {
             setStyle(envelopeSender, `
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: flex-start !important;
-                gap: 0.25rem !important;
+                display: block !important;
+                position: absolute !important;
+                left: 50px !important;
+                top: 50px !important;
+                text-align: left !important;
+                width: 300px !important;
             `);
         }
 
         const envelopeLogo = clone.querySelector('.envelope-logo');
         if (envelopeLogo) {
             setStyle(envelopeLogo, `
-                width: 32px !important;
-                height: 32px !important;
+                width: 64px !important;
+                height: 64px !important;
                 background-size: contain !important;
                 background-repeat: no-repeat !important;
                 background-position: center !important;
-                margin-bottom: 0.5rem !important;
+                margin-bottom: 12px !important;
+                display: block !important;
             `);
         }
 
@@ -657,7 +798,9 @@ const PdfModule = (function() {
             setStyle(envelopeBrand, `
                 color: ${primaryColor} !important;
                 font-weight: 700 !important;
-                font-size: 0.875rem !important;
+                font-size: 1.75rem !important;
+                margin-bottom: 4px !important;
+                display: block !important;
             `);
         }
 
@@ -666,61 +809,66 @@ const PdfModule = (function() {
             setStyle(envelopeAddress, `
                 opacity: 0.6 !important;
                 line-height: 1.5 !important;
-                font-size: 0.75rem !important;
+                font-size: 1.25rem !important;
+                display: block !important;
             `);
         }
 
         const envelopeRecipient = clone.querySelector('.envelope-recipient');
         if (envelopeRecipient) {
             setStyle(envelopeRecipient, `
+                display: block !important;
                 position: absolute !important;
-                left: 50% !important;
-                top: 55% !important;
-                transform: translate(-50%, -50%) !important;
+                right: 100px !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
                 text-align: center !important;
-                font-size: 0.875rem !important;
-                line-height: 1.6 !important;
+                font-size: 1.75rem !important;
+                line-height: 1.8 !important;
+                width: 350px !important;
             `);
         }
 
-        // Presentation slide - need explicit dimensions since aspect-ratio may not work in capture
+        // Presentation slide - 1.5x bigger (960x540)
         const slide = clone.querySelector('.presentation-slide');
         if (slide) {
             setStyle(slide, `
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border-bottom: 5px solid ${primaryColor} !important;
-                border-radius: 8px !important;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
-                padding: 30px !important;
+                border-bottom: 7.5px solid ${primaryColor} !important;
+                border-radius: 12px !important;
+                box-shadow: 0 6px 30px rgba(0,0,0,0.3) !important;
+                padding: 45px !important;
                 opacity: 1 !important;
                 filter: none !important;
                 backdrop-filter: none !important;
-                width: 640px !important;
-                height: 360px !important;
+                width: 960px !important;
+                height: 540px !important;
                 display: flex !important;
                 flex-direction: column !important;
                 position: relative !important;
+                margin: 0 auto !important;
+                color: #1a1a2e !important;
             `);
         }
 
         const slideHeader = clone.querySelector('.slide-header');
-        if (slideHeader) setStyle(slideHeader, 'display: flex !important; justify-content: flex-end !important; margin-bottom: 20px !important;');
+        if (slideHeader) setStyle(slideHeader, 'display: flex !important; justify-content: flex-end !important; margin-bottom: 30px !important;');
 
         const slideContent = clone.querySelector('.slide-content');
         if (slideContent) setStyle(slideContent, 'flex: 1 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; text-align: center !important;');
 
         const slideTitle = clone.querySelector('.slide-title');
-        if (slideTitle) setStyle(slideTitle, `color: ${secondaryColor} !important; font-size: 28px !important; font-weight: bold !important; margin-bottom: 10px !important;`);
+        if (slideTitle) setStyle(slideTitle, `color: ${secondaryColor} !important; font-size: 42px !important; font-weight: bold !important; margin-bottom: 15px !important;`);
 
         const slideSubtitle = clone.querySelector('.slide-subtitle');
-        if (slideSubtitle) setStyle(slideSubtitle, 'color: #666666 !important; font-size: 14px !important;');
+        if (slideSubtitle) setStyle(slideSubtitle, 'color: #666666 !important; font-size: 21px !important;');
 
         const slideFooter = clone.querySelector('.slide-footer');
-        if (slideFooter) setStyle(slideFooter, 'display: flex !important; justify-content: space-between !important; font-size: 10px !important; color: #999999 !important; margin-top: auto !important;');
+        if (slideFooter) setStyle(slideFooter, 'display: flex !important; justify-content: space-between !important; font-size: 15px !important; color: #999999 !important; margin-top: auto !important;');
 
         const slideLogo = clone.querySelector('.slide-logo');
-        if (slideLogo) setStyle(slideLogo, 'width: 60px !important; height: 60px !important; background-size: contain !important; background-repeat: no-repeat !important;');
+        if (slideLogo) setStyle(slideLogo, 'width: 90px !important; height: 90px !important; background-size: contain !important; background-repeat: no-repeat !important;');
 
         // Add CSS to remove pseudo-elements that might cause issues
         const styleTag = document.createElement('style');
