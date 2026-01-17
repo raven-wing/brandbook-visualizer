@@ -592,6 +592,48 @@ const PdfModule = (function() {
     }
 
     /**
+     * Embed Google Fonts as base64 CSS for html-to-image
+     * Returns CSS string with fonts embedded as data URIs
+     */
+    async function embedFontsAsBase64(fontFamilies) {
+        let embeddedCss = '';
+
+        for (const family of fontFamilies) {
+            const cssUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@400;700&display=swap`;
+
+            try {
+                const response = await fetch(cssUrl);
+                if (!response.ok) continue;
+
+                let css = await response.text();
+
+                // Find all font URLs and replace with base64
+                const urlRegex = /url\((https:\/\/fonts\.gstatic\.com[^)]+)\)/g;
+                const urls = [...css.matchAll(urlRegex)].map(m => m[1]);
+
+                for (const fontUrl of urls) {
+                    try {
+                        const fontResponse = await fetch(fontUrl);
+                        const fontBuffer = await fontResponse.arrayBuffer();
+                        const base64 = btoa(String.fromCharCode(...new Uint8Array(fontBuffer)));
+                        const mimeType = fontUrl.includes('.woff2') ? 'font/woff2' : 'font/woff';
+                        const dataUri = `data:${mimeType};base64,${base64}`;
+                        css = css.replace(fontUrl, dataUri);
+                    } catch (e) {
+                        // Skip this font file
+                    }
+                }
+
+                embeddedCss += css + '\n';
+            } catch (e) {
+                console.warn('Could not load font:', family);
+            }
+        }
+
+        return embeddedCss;
+    }
+
+    /**
      * Suppress CORS errors from html-to-image during capture
      */
     function suppressCorsErrors() {
@@ -617,6 +659,13 @@ const PdfModule = (function() {
 
         // Suppress CORS errors from html-to-image
         const restoreConsole = suppressCorsErrors();
+
+        // Embed fonts as base64 CSS for html-to-image
+        const primaryFont = brandbook.typography.primary.family;
+        const secondaryFont = brandbook.typography.secondary?.family || primaryFont;
+        const fontsToLoad = [primaryFont];
+        if (secondaryFont !== primaryFont) fontsToLoad.push(secondaryFont);
+        const fontEmbedCSS = await embedFontsAsBase64(fontsToLoad);
 
         const mockupConfigs = [
             { id: 'mockup-business-card', title: 'Business Card', num: '05' },
@@ -655,8 +704,8 @@ const PdfModule = (function() {
                 tempContainer.appendChild(clone);
                 prepareCloneForCapture(clone, brandbook);
 
-                // Minimal delay for DOM settling
-                await new Promise(r => setTimeout(r, 20));
+                // Wait for DOM settling - fonts are already loaded via FontFace API
+                await new Promise(r => setTimeout(r, 50));
 
                 // Use JPEG for ALL mockups - significantly reduces data size
                 // which speeds up pdf.addImage() (the main bottleneck)
@@ -669,7 +718,8 @@ const PdfModule = (function() {
                     pixelRatio: 1.0,  // Lower ratio = smaller image = faster pdf.addImage
                     quality: 0.85,
                     backgroundColor: '#0f0f1a',
-                    cacheBust: true
+                    cacheBust: true,
+                    fontEmbedCSS: fontEmbedCSS
                 });
                 const htmlToImageDuration = performance.now() - htmlToImageStart;
                 if (PdfTiming.enabled) {
@@ -775,6 +825,8 @@ const PdfModule = (function() {
     function prepareCloneForCapture(clone, brandbook) {
         const primaryColor = brandbook.colors.primary.hex;
         const secondaryColor = brandbook.colors.secondary.hex;
+        const primaryFont = brandbook.typography.primary.family;
+        const secondaryFont = brandbook.typography.secondary?.family || primaryFont;
 
         // Helper to set style attribute completely
         const setStyle = (el, styles) => {
@@ -833,10 +885,10 @@ const PdfModule = (function() {
             }
 
             const cardBrandName = cardFront.querySelector('.card-brand-name');
-            if (cardBrandName) setStyle(cardBrandName, `font-size: 11rem !important; font-weight: 700 !important; margin-bottom: 3rem !important;`);
+            if (cardBrandName) setStyle(cardBrandName, `font-family: '${primaryFont}', sans-serif !important; font-size: 11rem !important; font-weight: 700 !important; margin-bottom: 3rem !important;`);
 
             const cardTagline = cardFront.querySelector('.card-tagline');
-            if (cardTagline) setStyle(cardTagline, `font-size: 6rem !important; opacity: 0.8 !important;`);
+            if (cardTagline) setStyle(cardTagline, `font-family: '${secondaryFont}', sans-serif !important; font-size: 6rem !important; opacity: 0.8 !important;`);
         }
 
         // Business card back - original size (2880x1680)
@@ -864,16 +916,16 @@ const PdfModule = (function() {
             if (cardContact) setStyle(cardContact, `display: flex !important; flex-direction: column !important; width: 100% !important;`);
 
             const contactName = cardBack.querySelector('.contact-name');
-            if (contactName) setStyle(contactName, `color: ${primaryColor} !important; font-weight: bold !important; font-size: 9rem !important; margin-bottom: 2rem !important; display: block !important;`);
+            if (contactName) setStyle(contactName, `font-family: '${primaryFont}', sans-serif !important; color: ${primaryColor} !important; font-weight: bold !important; font-size: 9rem !important; margin-bottom: 2rem !important; display: block !important;`);
 
             const contactTitle = cardBack.querySelector('.contact-title');
-            if (contactTitle) setStyle(contactTitle, `font-size: 6rem !important; opacity: 0.6 !important; margin-bottom: 10rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; display: block !important; color: #333 !important;`);
+            if (contactTitle) setStyle(contactTitle, `font-family: '${secondaryFont}', sans-serif !important; font-size: 6rem !important; opacity: 0.6 !important; margin-bottom: 10rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; display: block !important; color: #333 !important;`);
 
             const contactInfo = cardBack.querySelector('.contact-info');
             if (contactInfo) {
-                setStyle(contactInfo, `font-size: 6.5rem !important; gap: 3rem !important; display: flex !important; flex-direction: column !important; color: #333 !important;`);
+                setStyle(contactInfo, `font-family: '${secondaryFont}', sans-serif !important; font-size: 6.5rem !important; gap: 3rem !important; display: flex !important; flex-direction: column !important; color: #333 !important;`);
                 contactInfo.querySelectorAll('span').forEach(span => {
-                    setStyle(span, `display: block !important; font-size: 6.5rem !important; color: #333 !important;`);
+                    setStyle(span, `font-family: '${secondaryFont}', sans-serif !important; display: block !important; font-size: 6.5rem !important; color: #333 !important;`);
                 });
             }
         }
@@ -940,6 +992,7 @@ const PdfModule = (function() {
 
             const platformLabel = platformPreview.querySelector('.platform-label');
             if (platformLabel) setStyle(platformLabel, `
+                font-family: '${secondaryFont}', sans-serif !important;
                 font-size: 64px !important;
                 margin-bottom: 96px !important;
                 color: #6b7280 !important;
@@ -985,10 +1038,10 @@ const PdfModule = (function() {
         }
 
         const platformName = clone.querySelector('.platform-name');
-        if (platformName) setStyle(platformName, `font-size: 96px !important; font-weight: 700 !important; color: #1a1a2e !important;`);
+        if (platformName) setStyle(platformName, `font-family: '${primaryFont}', sans-serif !important; font-size: 96px !important; font-weight: 700 !important; color: #1a1a2e !important;`);
 
         const platformHandle = clone.querySelector('.platform-handle');
-        if (platformHandle) setStyle(platformHandle, `font-size: 72px !important; color: #6b7280 !important;`);
+        if (platformHandle) setStyle(platformHandle, `font-family: '${secondaryFont}', sans-serif !important; font-size: 72px !important; color: #6b7280 !important;`);
 
         // Letterhead - optimized size (3000x4125)
         const letterhead = clone.querySelector('.letterhead');
@@ -1034,34 +1087,35 @@ const PdfModule = (function() {
         }
 
         const letterheadBrand = clone.querySelector('.letterhead-brand');
-        if (letterheadBrand) setStyle(letterheadBrand, `font-size: 5.6rem !important; font-weight: 700 !important;`);
+        if (letterheadBrand) setStyle(letterheadBrand, `font-family: '${primaryFont}', sans-serif !important; font-size: 5.6rem !important; font-weight: 700 !important;`);
 
         const letterheadContent = clone.querySelector('.letterhead-content');
-        if (letterheadContent) setStyle(letterheadContent, `flex: 1 !important; font-size: 3.3rem !important; line-height: 1.8 !important; width: 100% !important;`);
+        if (letterheadContent) setStyle(letterheadContent, `font-family: '${secondaryFont}', sans-serif !important; flex: 1 !important; font-size: 3.3rem !important; line-height: 1.8 !important; width: 100% !important;`);
 
         const letterDate = clone.querySelector('.letter-date');
-        if (letterDate) setStyle(letterDate, `margin-bottom: 3.75rem !important; opacity: 0.6 !important; font-size: 2.85rem !important;`);
+        if (letterDate) setStyle(letterDate, `font-family: '${secondaryFont}', sans-serif !important; margin-bottom: 3.75rem !important; opacity: 0.6 !important; font-size: 2.85rem !important;`);
 
         const letterGreeting = clone.querySelector('.letter-greeting');
-        if (letterGreeting) setStyle(letterGreeting, `margin-bottom: 3rem !important; font-weight: 500 !important; font-size: 3.3rem !important;`);
+        if (letterGreeting) setStyle(letterGreeting, `font-family: '${secondaryFont}', sans-serif !important; margin-bottom: 3rem !important; font-weight: 500 !important; font-size: 3.3rem !important;`);
 
         const letterBody = clone.querySelector('.letter-body');
         if (letterBody) {
-            setStyle(letterBody, `font-size: 3.3rem !important; width: 100% !important;`);
-            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `margin-bottom: 3rem !important; opacity: 0.8 !important;`));
+            setStyle(letterBody, `font-family: '${secondaryFont}', sans-serif !important; font-size: 3.3rem !important; width: 100% !important;`);
+            letterBody.querySelectorAll('p').forEach(p => setStyle(p, `font-family: '${secondaryFont}', sans-serif !important; margin-bottom: 3rem !important; opacity: 0.8 !important;`));
         }
 
         const letterSignature = clone.querySelector('.letter-signature');
-        if (letterSignature) setStyle(letterSignature, `margin-top: 6rem !important; font-size: 3.3rem !important;`);
+        if (letterSignature) setStyle(letterSignature, `font-family: '${secondaryFont}', sans-serif !important; margin-top: 6rem !important; font-size: 3.3rem !important;`);
 
         const signatureName = clone.querySelector('.signature-name');
-        if (signatureName) setStyle(signatureName, `color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 3rem !important; font-size: 3.3rem !important;`);
+        if (signatureName) setStyle(signatureName, `font-family: '${primaryFont}', sans-serif !important; color: ${primaryColor} !important; font-weight: 700 !important; margin-top: 3rem !important; font-size: 3.3rem !important;`);
 
         const signatureTitle = clone.querySelector('.signature-title');
-        if (signatureTitle) setStyle(signatureTitle, `font-size: 2.85rem !important; opacity: 0.6 !important;`);
+        if (signatureTitle) setStyle(signatureTitle, `font-family: '${secondaryFont}', sans-serif !important; font-size: 2.85rem !important; opacity: 0.6 !important;`);
 
         const letterheadFooter = clone.querySelector('.letterhead-footer');
         if (letterheadFooter) setStyle(letterheadFooter, `
+            font-family: '${secondaryFont}', sans-serif !important;
             border-top: 4.5px solid ${secondaryColor} !important;
             color: ${secondaryColor} !important;
             display: flex !important;
@@ -1131,6 +1185,7 @@ const PdfModule = (function() {
         const envelopeBrand = clone.querySelector('.envelope-brand');
         if (envelopeBrand) {
             setStyle(envelopeBrand, `
+                font-family: '${primaryFont}', sans-serif !important;
                 color: ${primaryColor} !important;
                 font-weight: 700 !important;
                 font-size: 4.2rem !important;
@@ -1142,6 +1197,7 @@ const PdfModule = (function() {
         const envelopeAddress = clone.querySelector('.envelope-address');
         if (envelopeAddress) {
             setStyle(envelopeAddress, `
+                font-family: '${secondaryFont}', sans-serif !important;
                 opacity: 0.6 !important;
                 line-height: 1.5 !important;
                 font-size: 3rem !important;
@@ -1152,6 +1208,7 @@ const PdfModule = (function() {
         const envelopeRecipient = clone.querySelector('.envelope-recipient');
         if (envelopeRecipient) {
             setStyle(envelopeRecipient, `
+                font-family: '${secondaryFont}', sans-serif !important;
                 display: block !important;
                 position: absolute !important;
                 right: 240px !important;
@@ -1209,13 +1266,13 @@ const PdfModule = (function() {
         if (slideContent) setStyle(slideContent, 'flex: 1 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; text-align: center !important;');
 
         const slideTitle = clone.querySelector('.slide-title');
-        if (slideTitle) setStyle(slideTitle, `color: ${secondaryColor} !important; font-size: 120px !important; font-weight: bold !important; margin-bottom: 38px !important; display: block !important;`);
+        if (slideTitle) setStyle(slideTitle, `font-family: '${primaryFont}', sans-serif !important; color: ${secondaryColor} !important; font-size: 120px !important; font-weight: bold !important; margin-bottom: 38px !important; display: block !important;`);
 
         const slideSubtitle = clone.querySelector('.slide-subtitle');
-        if (slideSubtitle) setStyle(slideSubtitle, 'color: #666666 !important; font-size: 60px !important; display: block !important;');
+        if (slideSubtitle) setStyle(slideSubtitle, `font-family: '${secondaryFont}', sans-serif !important; color: #666666 !important; font-size: 60px !important; display: block !important;`);
 
         const slideFooter = clone.querySelector('.slide-footer');
-        if (slideFooter) setStyle(slideFooter, 'display: flex !important; justify-content: space-between !important; font-size: 38px !important; color: #999999 !important; margin-top: auto !important; width: 100% !important;');
+        if (slideFooter) setStyle(slideFooter, `font-family: '${secondaryFont}', sans-serif !important; display: flex !important; justify-content: space-between !important; font-size: 38px !important; color: #999999 !important; margin-top: auto !important; width: 100% !important;`);
 
         const slideLogo = clone.querySelector('.slide-logo');
         if (slideLogo) {
@@ -1492,6 +1549,13 @@ const PdfModule = (function() {
         const element = document.getElementById(mockupId);
         if (!element) return null;
 
+        // Embed fonts as base64 CSS
+        const primaryFont = brandbook.typography.primary.family;
+        const secondaryFont = brandbook.typography.secondary?.family || primaryFont;
+        const fontsToLoad = [primaryFont];
+        if (secondaryFont !== primaryFont) fontsToLoad.push(secondaryFont);
+        const fontEmbedCSS = await embedFontsAsBase64(fontsToLoad);
+
         const tempContainer = document.createElement('div');
         tempContainer.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:transparent;padding:20px;min-width:3000px;';
         document.body.appendChild(tempContainer);
@@ -1511,7 +1575,8 @@ const PdfModule = (function() {
 
             const pngData = await htmlToImage.toPng(tempContainer, {
                 pixelRatio: 1.5,
-                cacheBust: true
+                cacheBust: true,
+                fontEmbedCSS: fontEmbedCSS
             });
 
             const img = new Image();
